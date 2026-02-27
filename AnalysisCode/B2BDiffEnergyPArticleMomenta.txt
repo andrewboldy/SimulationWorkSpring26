@@ -1,0 +1,11 @@
+
+Processing displayParticleMomentum.C++("Filelists/B2BDiffEnergyMDC2025Filelist.txt")...
+EventNtuple v06_08_01
+There are 6330 entries. Printing PDG, process code, number of hits, and rank for each.
+Calculation complete!
+Printing Results...
+| Min Start | Max Start | Min End | Max End | Momenta by Particle in MeV/c:      --> Average: Start | End 
+Electron: | 0.00598773 | 318 | 0 | 1.30362 | --> Average: 28.1936 | 8.92037e-05
+Positron: | 6.41376 | 1449.42 | 0 | 0 | --> Average: 297 | 0
+Muon: | 11.0981 | 130.658 | 4.38132 | 52.8895 | --> Average: 41.3112 | 33.7235
+Proton: | 1115.5 | 8888.89 | 1082.7 | 8888.88 | --> Average: 8765.78 | 8690.45
