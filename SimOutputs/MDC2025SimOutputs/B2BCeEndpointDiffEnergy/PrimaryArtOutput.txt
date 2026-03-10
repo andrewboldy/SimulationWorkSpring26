@@ -1,0 +1,222 @@
+
+Attaching file dts.mu2e.B2BCeEndpointDiffEnergy.version.sequencer.art as _file0...
+(TFile *) 0x8d6680
+TFile**		dts.mu2e.B2BCeEndpointDiffEnergy.version.sequencer.art	
+ TFile*		dts.mu2e.B2BCeEndpointDiffEnergy.version.sequencer.art	
+  KEY: TKey	RootFileDB;1	sqlite3 database file
+  KEY: TTree	MetaData;1	
+  KEY: TTree	FileIndex;1	
+  KEY: TTree	Parentage;1	
+  KEY: TTree	Events;1	
+  KEY: TTree	EventMetaData;1	
+  KEY: TTree	SubRuns;1	
+  KEY: TTree	SubRunMetaData;1	
+  KEY: TTree	Runs;1	
+  KEY: TTree	RunMetaData;1	
+  KEY: TTree	ResultsTree;1	
+  KEY: TTree	ResultsMetaData;1	
+******************************************************************************
+*Tree    :Events    :                                                        *
+*Entries :     7472 : Total =       459498949 bytes  File  Size =  227235419 *
+*        :          : Tree compression factor =   2.02                       *
+******************************************************************************
+*Br    0 :EventAuxiliary : art::EventAuxiliary                               *
+*Entries :     7472 : Total  Size=     617489 bytes  File Size  =      46688 *
+*Baskets :       40 : Basket Size=      16384 bytes  Compression=  13.20     *
+*............................................................................*
+*Branch  :art::TriggerResults_TriggerResults__Primary.                       *
+*Entries :     7472 : BranchElement (see below)                              *
+*............................................................................*
+*Br    1 :art::TriggerResults_TriggerResults__Primary.present : Bool_t       *
+*Entries :     7472 : Total  Size=       8265 bytes  File Size  =        159 *
+*Baskets :        1 : Basket Size=      16384 bytes  Compression=  47.75     *
+*............................................................................*
+*Br    2 :art::TriggerResults_TriggerResults__Primary.rangeSetID : UInt_t    *
+*Entries :     7472 : Total  Size=      30819 bytes  File Size  =        338 *
+*Baskets :        2 : Basket Size=      16384 bytes  Compression=  89.15     *
+*............................................................................*
+*Br    3 :art::TriggerResults_TriggerResults__Primary.obj : art:             *
+*         | :TriggerResults                                                  *
+*Entries :     7472 : Total  Size=     430557 bytes  File Size  =      22587 *
+*Baskets :       29 : Basket Size=      16384 bytes  Compression=  19.02     *
+*............................................................................*
+*Branch  :mu2e::GenParticles_compressDetStepMCs__Primary.                    *
+*Entries :     7472 : BranchElement (see below)                              *
+*............................................................................*
+*Br    4 :mu2e::GenParticles_compressDetStepMCs__Primary.present : Bool_t    *
+*Entries :     7472 : Total  Size=       8280 bytes  File Size  =        162 *
+*Baskets :        1 : Basket Size=      16384 bytes  Compression=  46.88     *
+*............................................................................*
+*Br    5 :mu2e::GenParticles_compressDetStepMCs__Primary.rangeSetID : UInt_t *
+*Entries :     7472 : Total  Size=      30837 bytes  File Size  =        342 *
+*Baskets :        2 : Basket Size=      16384 bytes  Compression=  88.13     *
+*............................................................................*
+*Br    6 :mu2e::GenParticles_compressDetStepMCs__Primary.obj : vector<mu2e:  *
+*         | :GenParticle>                                                    *
+*Entries :     7472 : Total  Size=     965872 bytes  File Size  =     249600 *
+*Baskets :       61 : Basket Size=      16384 bytes  Compression=   3.86     *
+*............................................................................*
+*Branch  :mu2e::CaloShowerSteps_compressDetStepMCs__Primary.                 *
+*Entries :     7472 : BranchElement (see below)                              *
+*............................................................................*
+*Br    7 :mu2e::CaloShowerSteps_compressDetStepMCs__Primary.present : Bool_t *
+*Entries :     7472 : Total  Size=       8295 bytes  File Size  =        165 *
+*Baskets :        1 : Basket Size=      16384 bytes  Compression=  46.05     *
+*............................................................................*
+*Br    8 :mu2e::CaloShowerSteps_compressDetStepMCs__Primary.rangeSetID :     *
+*         | UInt_t                                                           *
+*Entries :     7472 : Total  Size=      30855 bytes  File Size  =        350 *
+*Baskets :        2 : Basket Size=      16384 bytes  Compression=  86.13     *
+*............................................................................*
+*Br    9 :mu2e::CaloShowerSteps_compressDetStepMCs__Primary.obj :            *
+*         | vector<mu2e::CaloShowerStep>                                     *
+*Entries :     7472 : Total  Size=   21541341 bytes  File Size  =    9270681 *
+*Baskets :     1437 : Basket Size=      16384 bytes  Compression=   2.32     *
+*............................................................................*
+*Branch  :mu2e::SimParticleart::Ptrmu2e::MCTrajectorystd::map_compressDetStepMCs__Primary. *
+*Entries :     7472 : BranchElement (see below)                              *
+*............................................................................*
+*Br   10 :mu2e::SimParticleart::Ptrmu2e::MCTrajectorystd::map_compressDetStepMCs__Primary.present : *
+*         | Bool_t                                                           *
+*Entries :     7472 : Total  Size=       8445 bytes  File Size  =        195 *
+*Baskets :        1 : Basket Size=      16384 bytes  Compression=  39.12     *
+*............................................................................*
+*Br   11 :mu2e::SimParticleart::Ptrmu2e::MCTrajectorystd::map_compressDetStepMCs__Primary.rangeSetID : *
+*         | UInt_t                                                           *
+*Entries :     7472 : Total  Size=      31035 bytes  File Size  =        409 *
+*Baskets :        2 : Basket Size=      16384 bytes  Compression=  73.85     *
+*............................................................................*
+*Br   12 :mu2e::SimParticleart::Ptrmu2e::MCTrajectorystd::map_compressDetStepMCs__Primary.obj : *
+*         | map<art::Ptr<mu2e::SimParticle>,mu2e::MCTrajectory>              *
+*Entries :     7472 : Total  Size=  169118935 bytes  File Size  =  124750063 *
+*Baskets :     7472 : Basket Size=      16384 bytes  Compression=   1.35     *
+*............................................................................*
+*Branch  :mu2e::SurfaceSteps_compressDetStepMCs__Primary.                    *
+*Entries :     7472 : BranchElement (see below)                              *
+*............................................................................*
+*Br   13 :mu2e::SurfaceSteps_compressDetStepMCs__Primary.present : Bool_t    *
+*Entries :     7472 : Total  Size=       8280 bytes  File Size  =        162 *
+*Baskets :        1 : Basket Size=      16384 bytes  Compression=  46.88     *
+*............................................................................*
+*Br   14 :mu2e::SurfaceSteps_compressDetStepMCs__Primary.rangeSetID : UInt_t *
+*Entries :     7472 : Total  Size=      30837 bytes  File Size  =        342 *
+*Baskets :        2 : Basket Size=      16384 bytes  Compression=  88.13     *
+*............................................................................*
+*Br   15 :mu2e::SurfaceSteps_compressDetStepMCs__Primary.obj : vector<mu2e:  *
+*         | :SurfaceStep>                                                    *
+*Entries :     7472 : Total  Size=   48620204 bytes  File Size  =   13974064 *
+*Baskets :     3327 : Basket Size=      16384 bytes  Compression=   3.47     *
+*............................................................................*
+*Branch  :mu2e::SimParticlemv_compressDetStepMCs__Primary.                   *
+*Entries :     7472 : BranchElement (see below)                              *
+*............................................................................*
+*Br   16 :mu2e::SimParticlemv_compressDetStepMCs__Primary.present : Bool_t   *
+*Entries :     7472 : Total  Size=       8285 bytes  File Size  =        163 *
+*Baskets :        1 : Basket Size=      16384 bytes  Compression=  46.60     *
+*............................................................................*
+*Br   17 :mu2e::SimParticlemv_compressDetStepMCs__Primary.rangeSetID : UInt_t*
+*Entries :     7472 : Total  Size=      30843 bytes  File Size  =        344 *
+*Baskets :        2 : Basket Size=      16384 bytes  Compression=  87.62     *
+*............................................................................*
+*Br   18 :mu2e::SimParticlemv_compressDetStepMCs__Primary.obj : cet:         *
+*         | :map_vector<mu2e::SimParticle>                                   *
+*Entries :     7472 : Total  Size=   74702661 bytes  File Size  =   21270579 *
+*Baskets :     5349 : Basket Size=      16384 bytes  Compression=   3.51     *
+*............................................................................*
+*Branch  :mu2e::StatusG4_g4run__Primary.                                     *
+*Entries :     7472 : BranchElement (see below)                              *
+*............................................................................*
+*Br   19 :mu2e::StatusG4_g4run__Primary.present : Bool_t                     *
+*Entries :     7472 : Total  Size=       8195 bytes  File Size  =        145 *
+*Baskets :        1 : Basket Size=      16384 bytes  Compression=  52.26     *
+*............................................................................*
+*Br   20 :mu2e::StatusG4_g4run__Primary.rangeSetID : UInt_t                  *
+*Entries :     7472 : Total  Size=      30735 bytes  File Size  =        310 *
+*Baskets :        2 : Basket Size=      16384 bytes  Compression=  97.12     *
+*............................................................................*
+*Br   21 :mu2e::StatusG4_g4run__Primary.obj : mu2e::StatusG4                 *
+*Entries :     7472 : Total  Size=     294429 bytes  File Size  =      85723 *
+*Baskets :       20 : Basket Size=      16384 bytes  Compression=   3.43     *
+*............................................................................*
+*Branch  :mu2e::StepPointMCs_compressDetStepMCs_virtualdetector_Primary.     *
+*Entries :     7472 : BranchElement (see below)                              *
+*............................................................................*
+*Br   22 :mu2e::StepPointMCs_compressDetStepMCs_virtualdetector_Primary.present : *
+*         | Bool_t                                                           *
+*Entries :     7472 : Total  Size=       8355 bytes  File Size  =        177 *
+*Baskets :        1 : Basket Size=      16384 bytes  Compression=  42.99     *
+*............................................................................*
+*Br   23 :mu2e::StepPointMCs_compressDetStepMCs_virtualdetector_Primary.rangeSetID : *
+*         | UInt_t                                                           *
+*Entries :     7472 : Total  Size=      30927 bytes  File Size  =        373 *
+*Baskets :        2 : Basket Size=      16384 bytes  Compression=  80.88     *
+*............................................................................*
+*Br   24 :mu2e::StepPointMCs_compressDetStepMCs_virtualdetector_Primary.obj : *
+*         | vector<mu2e::StepPointMC>                                        *
+*Entries :     7472 : Total  Size=   46222159 bytes  File Size  =   23024393 *
+*Baskets :     3140 : Basket Size=      16384 bytes  Compression=   2.00     *
+*............................................................................*
+*Branch  :mu2e::CrvSteps_compressDetStepMCs__Primary.                        *
+*Entries :     7472 : BranchElement (see below)                              *
+*............................................................................*
+*Br   25 :mu2e::CrvSteps_compressDetStepMCs__Primary.present : Bool_t        *
+*Entries :     7472 : Total  Size=       8260 bytes  File Size  =        158 *
+*Baskets :        1 : Basket Size=      16384 bytes  Compression=  48.04     *
+*............................................................................*
+*Br   26 :mu2e::CrvSteps_compressDetStepMCs__Primary.rangeSetID : UInt_t     *
+*Entries :     7472 : Total  Size=      30813 bytes  File Size  =        336 *
+*Baskets :        2 : Basket Size=      16384 bytes  Compression=  89.68     *
+*............................................................................*
+*Br   27 :mu2e::CrvSteps_compressDetStepMCs__Primary.obj : vector<mu2e:      *
+*         | :CrvStep>                                                        *
+*Entries :     7472 : Total  Size=     151629 bytes  File Size  =      14877 *
+*Baskets :       12 : Basket Size=      16384 bytes  Compression=  10.14     *
+*............................................................................*
+*Branch  :mu2e::PrimaryParticle_FindMCPrimary__Primary.                      *
+*Entries :     7472 : BranchElement (see below)                              *
+*............................................................................*
+*Br   28 :mu2e::PrimaryParticle_FindMCPrimary__Primary.present : Bool_t      *
+*Entries :     7472 : Total  Size=       8270 bytes  File Size  =        160 *
+*Baskets :        1 : Basket Size=      16384 bytes  Compression=  47.46     *
+*............................................................................*
+*Br   29 :mu2e::PrimaryParticle_FindMCPrimary__Primary.rangeSetID : UInt_t   *
+*Entries :     7472 : Total  Size=      30825 bytes  File Size  =        338 *
+*Baskets :        2 : Basket Size=      16384 bytes  Compression=  89.16     *
+*............................................................................*
+*Br   30 :mu2e::PrimaryParticle_FindMCPrimary__Primary.obj : mu2e:           *
+*         | :PrimaryParticle                                                 *
+*Entries :     7472 : Total  Size=     649163 bytes  File Size  =      73958 *
+*Baskets :       42 : Basket Size=      16384 bytes  Compression=   8.76     *
+*............................................................................*
+*Branch  :mu2e::StrawGasSteps_compressDetStepMCs__Primary.                   *
+*Entries :     7472 : BranchElement (see below)                              *
+*............................................................................*
+*Br   31 :mu2e::StrawGasSteps_compressDetStepMCs__Primary.present : Bool_t   *
+*Entries :     7472 : Total  Size=       8285 bytes  File Size  =        163 *
+*Baskets :        1 : Basket Size=      16384 bytes  Compression=  46.60     *
+*............................................................................*
+*Br   32 :mu2e::StrawGasSteps_compressDetStepMCs__Primary.rangeSetID : UInt_t*
+*Entries :     7472 : Total  Size=      30843 bytes  File Size  =        344 *
+*Baskets :        2 : Basket Size=      16384 bytes  Compression=  87.62     *
+*............................................................................*
+*Br   33 :mu2e::StrawGasSteps_compressDetStepMCs__Primary.obj : vector<mu2e: *
+*         | :StrawGasStep>                                                   *
+*Entries :     7472 : Total  Size=   95398897 bytes  File Size  =   34137682 *
+*Baskets :     5517 : Basket Size=      16384 bytes  Compression=   2.79     *
+*............................................................................*
+*Branch  :art::EventIDs_TargetStopResampler__Primary.                        *
+*Entries :     7472 : BranchElement (see below)                              *
+*............................................................................*
+*Br   34 :art::EventIDs_TargetStopResampler__Primary.present : Bool_t        *
+*Entries :     7472 : Total  Size=       8260 bytes  File Size  =        158 *
+*Baskets :        1 : Basket Size=      16384 bytes  Compression=  48.04     *
+*............................................................................*
+*Br   35 :art::EventIDs_TargetStopResampler__Primary.rangeSetID : UInt_t     *
+*Entries :     7472 : Total  Size=      30813 bytes  File Size  =        336 *
+*Baskets :        2 : Basket Size=      16384 bytes  Compression=  89.68     *
+*............................................................................*
+*Br   36 :art::EventIDs_TargetStopResampler__Primary.obj : vector<art:       *
+*         | :EventID>                                                        *
+*Entries :     7472 : Total  Size=     302356 bytes  File Size  =      51403 *
+*Baskets :       21 : Basket Size=      16384 bytes  Compression=   5.86     *
+*............................................................................*

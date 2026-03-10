@@ -1,0 +1,1 @@
+/exp/mu2e/app/users/aboldy/AnaDir/SimulationWorkSpring26/SimOutputs/MDC2025SimOutputs/B2BCeEndpointDiffEnergy/dts.mu2e.B2BCeEndpointDiffEnergy.version.sequencer.art
