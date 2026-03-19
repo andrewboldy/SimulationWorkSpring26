@@ -137,6 +137,7 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
   TH2D* hBackward = new TH2D("hBackward", "Backward electrons;#theta [rad];#phi [rad]", 100, 0.0, M_PI, 100, -M_PI, M_PI);
   TH1D* hCosTheta = new TH1D("hCosTheta", "Back-to-back check;cos(#theta);Counts", 200, -1.1, 1.1);
   TH2D* hCosThetaPhi = new TH2D("hCosThetaPhi", "Uniformity check;cos(#theta);#phi [rad]", 200, -1.0, 1.0, 100, -M_PI, M_PI);
+  TH2D* hCosThetaPhiAll = new TH2D("hCosThetaPhiAll", "All electrons;cos(#theta);#phi [rad]", 200, -1.0, 1.0, 100, -M_PI, M_PI);
 
   //Population of Branches
   string line1;
@@ -205,6 +206,8 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
 
     hCosTheta->Fill(cosTheta);
     hCosThetaPhi->Fill(cosTheta, sphericalVector1[2]);
+    hCosThetaPhiAll->Fill(std::cos(sphericalVector1[1]), sphericalVector1[2]);
+    hCosThetaPhiAll->Fill(std::cos(sphericalVector2[1]), sphericalVector2[2]);
 
     //Forward/backward definition based on pz of electron 1 (adjust if needed)
     if (cartesianVector1[2] >= 0.0)
@@ -251,6 +254,10 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
   TCanvas* cCosThetaPhi = new TCanvas("cCosThetaPhi", "CosTheta vs Phi", 900, 700);
   hCosThetaPhi->Draw("COLZ");
   cCosThetaPhi->SaveAs("GenBasicTTree_CosThetaPhi.pdf");
+
+  TCanvas* cCosThetaPhiAll = new TCanvas("cCosThetaPhiAll", "All Electrons CosTheta vs Phi", 900, 700);
+  hCosThetaPhiAll->Draw("COLZ");
+  cCosThetaPhiAll->SaveAs("GenBasicTTree_AllElectrons_CosThetaPhi.pdf");
 
   cout << "Total events processed: " << i_event << endl;
   cout << "Back-to-back pairs: " << b2bCount << endl;
