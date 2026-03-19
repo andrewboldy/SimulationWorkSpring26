@@ -1,13 +1,18 @@
 //----------------------------------------------------------------------------------
 
-//GenBasicTTree(string inputFile)
+//GenBasicTTree(string inputFile, bool skipFirstLine = false)
 //Written by Andrew Boldy + Codex
 //University of South Carolina
 //Spring 2026
 
 //----------------------------------------------------------------------------------
 
-//Reads through a parsed Generator Output and Creates a TTree Holding all of the Information for a Generator that produces two particles.
+//Reads through a parsed Generator Output and creates a TTree holding all of the information for a generator that produces two particles.
+//The input file is expected to have two lines per event: momentum line 1 and momentum line 2.
+//The first line can optionally be skipped if it is a header.
+
+//----------------------------------------------------------------------------------
+
 //Parts of the Structure for each event:
 //EventNumber (Which Event we are looking at)
 //MomNumber1 (First momentum line number: 1)
@@ -22,14 +27,17 @@
 //Energy2 (Energy magnitude of the second electron)
 //b2b (True if vectors are back-to-back within tolerance)
 
-
+//----------------------------------------------------------------------------------
 
 //Example of what we are reading
 //MomNumber: 1 || Cartesian vector: (43.7989, 15.8803, 24.1679) || Spherical Vector: (52.4844, 1.09226, 0.347831) || Magnitude of 4 Vector: 0.510999 || Energy: 52.4869
 //MomNumber: 2 || Cartesian vector: (-43.7989, -15.8803, -24.1679) || Spherical Vector: (52.4844, 2.04933, -2.79376) || Magnitude of 4 Vector: 0.510999 || Energy: 52.4869
 
+//----------------------------------------------------------------------------------
+
 //Also want to print out and show the generator outputs and do a true or false value to determine if they are truly back to back then plot specific colored points as a histogram
 //lets say red for "forward" and blue for "backwards" directions. May need to consult jackson for calculating which ones would make it to the detector effectively.
+
 //----------------------------------------------------------------------------------
 
 //My Inclusions
@@ -57,6 +65,8 @@
 
 //Mu2e Inclusions
 
+//----------------------------------------------------------------------------------
+
 //Using statements for readability
 using std::string;
 using std::ifstream;
@@ -65,12 +75,16 @@ using std::cerr;
 using std::endl;
 using std::vector;
 
+//----------------------------------------------------------------------------------
 //Helper to extract all numbers from a line (handles negatives and decimals)
+//This function is intentionally dumb and flexible: it scans the line and grabs any
+//floating-point number it finds in order of appearance.
+//----------------------------------------------------------------------------------
 static vector<double> extractNumbers(const string& line)
 {
-  vector<double> values;
-  const char* cstr = line.c_str();
-  char* endptr = nullptr;
+  vector<double> values; //vector to store the numbers that are found in the line
+  const char* cstr = line.c_str(); //raw char pointer for scanning the line
+  char* endptr = nullptr; //end pointer used by strtod to locate where the number stops
 
   while (*cstr != '\0')
   {
@@ -91,8 +105,16 @@ static vector<double> extractNumbers(const string& line)
   return values;
 }
 
+//----------------------------------------------------------------------------------
+//Main method
+//inputFile: path to the parsed generator output
+//skipFirstLine: set to true if the first line of the file is a header
+//----------------------------------------------------------------------------------
 void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
 {
+  //---------------------------------------------------------------------------------------------------------------------------
+  //Open input file and verify it is readable
+  //---------------------------------------------------------------------------------------------------------------------------
   ifstream inFile(inputFile);
   if (!inFile)
   {
@@ -100,10 +122,15 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
     return;
   } //end opening file check
 
-  //Iniatializations For TTree
+  //---------------------------------------------------------------------------------------------------------------------------
+  //Initialize TTree and output file
+  //---------------------------------------------------------------------------------------------------------------------------
   TFile *file = new TFile("GenOutputs.root","RECREATE"); //create (or recreate) the output root file for generators
   TTree *GeneratorBasicTTree = new TTree("GeneratorBasicTTree","Basic Mom TTree"); //create the TTree that will store information for the generators
 
+  //---------------------------------------------------------------------------------------------------------------------------
+  //Declare variables that will become branches
+  //---------------------------------------------------------------------------------------------------------------------------
   int event;
   int momNumber1;
   int momNumber2;
@@ -118,6 +145,9 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
   bool b2b;
   double cosTheta;
 
+  //---------------------------------------------------------------------------------------------------------------------------
+  //Create branches in the TTree
+  //---------------------------------------------------------------------------------------------------------------------------
   GeneratorBasicTTree->Branch("event", &event, "event/I");
   GeneratorBasicTTree->Branch("momNumber1", &momNumber1, "momNumber1/I");
   GeneratorBasicTTree->Branch("momNumber2", &momNumber2, "momNumber2/I");
@@ -132,19 +162,24 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
   GeneratorBasicTTree->Branch("cosTheta", &cosTheta, "cosTheta/D");
   GeneratorBasicTTree->Branch("b2b", &b2b, "b2b/O");
 
-  //Simple histograms for forward/backward points
+  //---------------------------------------------------------------------------------------------------------------------------
+  //Initialize histograms for quick diagnostic plots
+  //---------------------------------------------------------------------------------------------------------------------------
   TH2D* hForward = new TH2D("hForward", "Forward electrons;#theta [rad];#phi [rad]", 100, 0.0, M_PI, 100, -M_PI, M_PI);
   TH2D* hBackward = new TH2D("hBackward", "Backward electrons;#theta [rad];#phi [rad]", 100, 0.0, M_PI, 100, -M_PI, M_PI);
   TH1D* hCosTheta = new TH1D("hCosTheta", "Back-to-back check;cos(#theta);Counts", 200, -1.1, 1.1);
-  TH2D* hCosThetaPhi = new TH2D("hCosThetaPhi", "Uniformity check;cos(#theta);#phi [rad]", 200, -1.0, 1.0, 100, -M_PI, M_PI);
-  TH2D* hCosThetaPhiAll = new TH2D("hCosThetaPhiAll", "All electrons;cos(#theta);#phi [rad]", 200, -1.0, 1.0, 100, -M_PI, M_PI);
+  TH1D* hOpeningAngle = new TH1D("hOpeningAngle", "Opening angle;cos(#theta_{12});Counts", 200, -1.0, 1.0);
+  TH2D* hCosThetaPhiAll = new TH2D("hCosThetaPhiAll", "Single-electron angular distribution;cos(#theta);#phi [rad]", 200, -1.0, 1.0, 100, -M_PI, M_PI);
 
-  //Population of Branches
+  //---------------------------------------------------------------------------------------------------------------------------
+  //Read the input file, two lines per event
+  //---------------------------------------------------------------------------------------------------------------------------
   string line1;
   string line2;
   int i_event = 0;
   int b2bCount = 0;
 
+  //Optional skip of the first line (used for header line cases)
   if (skipFirstLine)
   {
     if (!std::getline(inFile, line1))
@@ -154,23 +189,32 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
     }
   }
 
+  //---------------------------------------------------------------------------------------------------------------------------
+  //Main loop over the input file
+  //---------------------------------------------------------------------------------------------------------------------------
   while (std::getline(inFile, line1))
   {
+    //Try to read the second line of the event; if missing, stop.
     if (!std::getline(inFile, line2))
     {
       cerr << "WARNING: Unpaired line at end of file. Stopping." << endl;
       break;
     }
 
+    //Extract all numeric values from both lines
     vector<double> nums1 = extractNumbers(line1);
     vector<double> nums2 = extractNumbers(line2);
 
+    //Sanity check: we expect 9 numbers per line for this format
     if (nums1.size() < 9 || nums2.size() < 9)
     {
       cerr << "WARNING: Could not parse line pair for event " << i_event << endl;
       continue;
     }
 
+    //-------------------------------------------------------------------------------------------------------------------------
+    //Map the values into their physical meanings
+    //-------------------------------------------------------------------------------------------------------------------------
     event = i_event;
     momNumber1 = static_cast<int>(nums1[0]);
     momNumber2 = static_cast<int>(nums2[0]);
@@ -185,6 +229,9 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
     fourMag2 = nums2[7];
     energy2 = nums2[8];
 
+    //-------------------------------------------------------------------------------------------------------------------------
+    //Compute the opening angle between the two 3-vectors
+    //-------------------------------------------------------------------------------------------------------------------------
     double p1 = std::sqrt(cartesianVector1[0]*cartesianVector1[0] +
                           cartesianVector1[1]*cartesianVector1[1] +
                           cartesianVector1[2]*cartesianVector1[2]);
@@ -195,8 +242,12 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
                  cartesianVector1[1]*cartesianVector2[1] +
                  cartesianVector1[2]*cartesianVector2[2];
 
+    //If both magnitudes are valid, compute cosine of the opening angle
     cosTheta = (p1 > 0.0 && p2 > 0.0) ? (dot / (p1 * p2)) : 1.0;
 
+    //-------------------------------------------------------------------------------------------------------------------------
+    //Back-to-back test and histogram fills
+    //-------------------------------------------------------------------------------------------------------------------------
     const double b2bTolerance = 1.0e-3; //cosTheta <= -1 + tol
     b2b = (cosTheta <= (-1.0 + b2bTolerance));
     if (b2b)
@@ -205,11 +256,15 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
     }
 
     hCosTheta->Fill(cosTheta);
-    hCosThetaPhi->Fill(cosTheta, sphericalVector1[2]);
+    hOpeningAngle->Fill(cosTheta);
+
+    //Fill angular distribution for each electron separately
     hCosThetaPhiAll->Fill(std::cos(sphericalVector1[1]), sphericalVector1[2]);
     hCosThetaPhiAll->Fill(std::cos(sphericalVector2[1]), sphericalVector2[2]);
 
+    //-------------------------------------------------------------------------------------------------------------------------
     //Forward/backward definition based on pz of electron 1 (adjust if needed)
+    //-------------------------------------------------------------------------------------------------------------------------
     if (cartesianVector1[2] >= 0.0)
     {
       hForward->Fill(sphericalVector1[1], sphericalVector1[2]);
@@ -219,6 +274,9 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
       hBackward->Fill(sphericalVector1[1], sphericalVector1[2]);
     }
 
+    //-------------------------------------------------------------------------------------------------------------------------
+    //Print the first few events for spot checks
+    //-------------------------------------------------------------------------------------------------------------------------
     if (i_event < 10)
     {
       cout << "Event " << i_event << endl;
@@ -227,11 +285,16 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
       cout << "  cosTheta = " << cosTheta << "  b2b = " << b2b << endl;
     }
 
+    //-------------------------------------------------------------------------------------------------------------------------
+    //Fill the tree and move to the next event
+    //-------------------------------------------------------------------------------------------------------------------------
     GeneratorBasicTTree->Fill();
     i_event++;
   } //finish reading and filling
 
-  //Writing of TTree
+  //---------------------------------------------------------------------------------------------------------------------------
+  //Write out the TTree and plots
+  //---------------------------------------------------------------------------------------------------------------------------
   GeneratorBasicTTree->Write();
 
   //Draw quick diagnostic plot for forward/backward
@@ -247,23 +310,31 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
   hBackward->Draw("P");
   cDir->SaveAs("GenBasicTTree_ForwardBackward.pdf");
 
+  //Back-to-back cosine distribution
   TCanvas* cB2B = new TCanvas("cB2B", "Back-to-Back", 800, 600);
   hCosTheta->Draw();
   cB2B->SaveAs("GenBasicTTree_CosTheta.pdf");
 
-  TCanvas* cCosThetaPhi = new TCanvas("cCosThetaPhi", "CosTheta vs Phi", 900, 700);
-  hCosThetaPhi->Draw("COLZ");
-  cCosThetaPhi->SaveAs("GenBasicTTree_CosThetaPhi.pdf");
+  //Opening angle histogram
+  TCanvas* cOpeningAngle = new TCanvas("cOpeningAngle", "Opening Angle", 900, 700);
+  hOpeningAngle->Draw();
+  cOpeningAngle->SaveAs("GenBasicTTree_OpeningAngle.pdf");
 
+  //Single-electron angular distribution
   TCanvas* cCosThetaPhiAll = new TCanvas("cCosThetaPhiAll", "All Electrons CosTheta vs Phi", 900, 700);
   hCosThetaPhiAll->Draw("COLZ");
   cCosThetaPhiAll->SaveAs("GenBasicTTree_AllElectrons_CosThetaPhi.pdf");
 
+  //Print event counts
   cout << "Total events processed: " << i_event << endl;
   cout << "Back-to-back pairs: " << b2bCount << endl;
 
+  //---------------------------------------------------------------------------------------------------------------------------
+  //Close the output file and clean up
+  //---------------------------------------------------------------------------------------------------------------------------
   file->Close();
 
   delete file;
   return;
 } //end GenBasicTTree method
+
