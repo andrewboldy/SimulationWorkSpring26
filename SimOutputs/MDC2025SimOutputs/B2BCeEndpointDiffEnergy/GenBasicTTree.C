@@ -170,7 +170,9 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
   TH2D* hBackward = new TH2D("hBackward", "Backward electrons;#theta [rad];#phi [rad]", 100, 0.0, M_PI, 100, -M_PI, M_PI);
   TH1D* hCosTheta = new TH1D("hCosTheta", "Back-to-back check;cos(#theta);Counts", 200, -1.1, 1.1);
   TH1D* hOpeningAngle = new TH1D("hOpeningAngle", "Opening angle;cos(#theta_{12});Counts", 200, -1.0, 1.0);
-  TH2D* hCosThetaPhiAll = new TH2D("hCosThetaPhiAll", "Single-electron angular distribution;cos(#theta);#phi [rad]", 200, -1.0, 1.0, 100, -M_PI, M_PI);
+  TH2D* hCosThetaPhiAll = new TH2D("hCosThetaPhiAll", "Angular dependence of all event electrons;cos(#theta);#phi [rad]", 200, -1.0, 1.0, 100, -M_PI, M_PI);
+  TH2D* thetaCompare = new TH2D("thetaCompare", "Theta comparison;#theta_{1} [rad];#theta_{2} [rad]", 100, 0.0, M_PI, 100, 0.0, M_PI);
+  TH2D* momCompare = new TH2D("momCompare", "Momentum magnitude comparison;|p_{1}| [MeV/c];|p_{2}| [MeV/c]", 120, 0.0, 120.0, 120, 0.0, 120.0);
   TH3D* hMom3D = new TH3D("hMom3D", "Momentum 3-vectors;p_{x} [MeV/c];p_{y} [MeV/c];p_{z} [MeV/c]", 120, -120.0, 120.0, 120, -120.0, 120.0, 120, -120.0, 120.0);
 
   //---------------------------------------------------------------------------------------------------------------------------
@@ -263,6 +265,8 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
     //Fill angular distribution for each electron separately
     hCosThetaPhiAll->Fill(std::cos(sphericalVector1[1]), sphericalVector1[2]);
     hCosThetaPhiAll->Fill(std::cos(sphericalVector2[1]), sphericalVector2[2]);
+    thetaCompare->Fill(sphericalVector1[1], sphericalVector2[1]);
+    momCompare->Fill(p1, p2);
     hMom3D->Fill(cartesianVector1[0], cartesianVector1[1], cartesianVector1[2]);
     hMom3D->Fill(cartesianVector2[0], cartesianVector2[1], cartesianVector2[2]);
 
@@ -328,6 +332,16 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
   TCanvas* cCosThetaPhiAll = new TCanvas("cCosThetaPhiAll", "All Electrons CosTheta vs Phi", 900, 700);
   hCosThetaPhiAll->Draw("COLZ");
   cCosThetaPhiAll->SaveAs("GenBasicTTree_AllElectrons_CosThetaPhi.pdf");
+
+  //Theta comparison for each event
+  TCanvas* cThetaCompare = new TCanvas("cThetaCompare", "Theta Comparison", 900, 700);
+  thetaCompare->Draw("COLZ");
+  cThetaCompare->SaveAs("GenBasicTTree_ThetaCompare.pdf");
+
+  //Momentum magnitude comparison for each event
+  TCanvas* cMomCompare = new TCanvas("cMomCompare", "Momentum Magnitude Comparison", 900, 700);
+  momCompare->Draw("COLZ");
+  cMomCompare->SaveAs("GenBasicTTree_MomCompare.pdf");
 
   //3D momentum distribution (interactive in ROOT, static PDF at a chosen view angle)
   TCanvas* cMom3D = new TCanvas("cMom3D", "Momentum 3D", 900, 700);
