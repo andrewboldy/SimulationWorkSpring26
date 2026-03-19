@@ -61,6 +61,8 @@
 #include <TH3D.h>
 #include <TCanvas.h>
 #include <TLegend.h>
+#include <TPad.h>
+#include <TPaveStats.h>
 
 //CLHEP Inclusions (If I'm feeling spicy)
 
@@ -104,6 +106,22 @@ static vector<double> extractNumbers(const string& line)
   }
 
   return values;
+}
+
+//----------------------------------------------------------------------------------
+//Helper to move the stat box so it does not cover the color scale
+//Coordinates are in NDC (0-1) space
+//----------------------------------------------------------------------------------
+static void moveStatBox(TH1* hist, double x1, double y1, double x2, double y2)
+{
+  if (!hist || !gPad) return;
+  gPad->Update(); //forces the stats box to be created
+  TPaveStats* st = dynamic_cast<TPaveStats*>(hist->FindObject("stats"));
+  if (!st) return;
+  st->SetX1NDC(x1);
+  st->SetY1NDC(y1);
+  st->SetX2NDC(x2);
+  st->SetY2NDC(y2);
 }
 
 //----------------------------------------------------------------------------------
@@ -174,6 +192,8 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
   TH2D* thetaCompare = new TH2D("thetaCompare", "Theta comparison;#theta_{1} [rad];#theta_{2} [rad]", 100, 0.0, M_PI, 100, 0.0, M_PI);
   TH2D* momCompare = new TH2D("momCompare", "Momentum magnitude comparison;|p_{1}| [MeV/c];|p_{2}| [MeV/c]", 120, 0.0, 120.0, 120, 0.0, 120.0);
   TH3D* hMom3D = new TH3D("hMom3D", "Momentum 3-vectors;p_{x} [MeV/c];p_{y} [MeV/c];p_{z} [MeV/c]", 120, -120.0, 120.0, 120, -120.0, 120.0, 120, -120.0, 120.0);
+
+  //Stat box placement will be handled after each draw
 
   //---------------------------------------------------------------------------------------------------------------------------
   //Read the input file, two lines per event
@@ -312,35 +332,42 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
   hForward->SetMarkerColor(kRed + 1);
   hForward->SetMarkerStyle(20);
   hForward->Draw("P");
+  moveStatBox(hForward, 0.70, 0.70, 0.90, 0.90);
   cDir->cd(2);
   hBackward->SetMarkerColor(kBlue + 1);
   hBackward->SetMarkerStyle(20);
   hBackward->Draw("P");
+  moveStatBox(hBackward, 0.70, 0.70, 0.90, 0.90);
   cDir->SaveAs("GenBasicTTree_ForwardBackward.pdf");
 
   //Back-to-back cosine distribution
   TCanvas* cB2B = new TCanvas("cB2B", "Back-to-Back", 800, 600);
   hCosTheta->Draw();
+  moveStatBox(hCosTheta, 0.70, 0.70, 0.90, 0.90);
   cB2B->SaveAs("GenBasicTTree_CosTheta.pdf");
 
   //Opening angle histogram
   TCanvas* cOpeningAngle = new TCanvas("cOpeningAngle", "Opening Angle", 900, 700);
   hOpeningAngle->Draw();
+  moveStatBox(hOpeningAngle, 0.70, 0.70, 0.90, 0.90);
   cOpeningAngle->SaveAs("GenBasicTTree_OpeningAngle.pdf");
 
   //Single-electron angular distribution
   TCanvas* cCosThetaPhiAll = new TCanvas("cCosThetaPhiAll", "All Electrons CosTheta vs Phi", 900, 700);
   hCosThetaPhiAll->Draw("COLZ");
+  moveStatBox(hCosThetaPhiAll, 0.70, 0.70, 0.90, 0.90);
   cCosThetaPhiAll->SaveAs("GenBasicTTree_AllElectrons_CosThetaPhi.pdf");
 
   //Theta comparison for each event
   TCanvas* cThetaCompare = new TCanvas("cThetaCompare", "Theta Comparison", 900, 700);
   thetaCompare->Draw("COLZ");
+  moveStatBox(thetaCompare, 0.70, 0.70, 0.90, 0.90);
   cThetaCompare->SaveAs("GenBasicTTree_ThetaCompare.pdf");
 
   //Momentum magnitude comparison for each event
   TCanvas* cMomCompare = new TCanvas("cMomCompare", "Momentum Magnitude Comparison", 900, 700);
   momCompare->Draw("COLZ");
+  moveStatBox(momCompare, 0.70, 0.70, 0.90, 0.90);
   cMomCompare->SaveAs("GenBasicTTree_MomCompare.pdf");
 
   //3D momentum distribution (interactive in ROOT, static PDF at a chosen view angle)
@@ -348,6 +375,7 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
   cMom3D->SetTheta(30.0); //viewing angle for static snapshot
   cMom3D->SetPhi(45.0);
   hMom3D->Draw("BOX2Z");
+  moveStatBox(hMom3D, 0.70, 0.70, 0.90, 0.90);
   cMom3D->SaveAs("GenBasicTTree_Momentum3D_View.pdf");
 
   //Print event counts
