@@ -58,6 +58,7 @@
 #include <TTree.h>
 #include <TH1D.h>
 #include <TH2D.h>
+#include <TH3D.h>
 #include <TCanvas.h>
 #include <TLegend.h>
 
@@ -170,6 +171,7 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
   TH1D* hCosTheta = new TH1D("hCosTheta", "Back-to-back check;cos(#theta);Counts", 200, -1.1, 1.1);
   TH1D* hOpeningAngle = new TH1D("hOpeningAngle", "Opening angle;cos(#theta_{12});Counts", 200, -1.0, 1.0);
   TH2D* hCosThetaPhiAll = new TH2D("hCosThetaPhiAll", "Single-electron angular distribution;cos(#theta);#phi [rad]", 200, -1.0, 1.0, 100, -M_PI, M_PI);
+  TH3D* hMom3D = new TH3D("hMom3D", "Momentum 3-vectors;p_{x} [MeV/c];p_{y} [MeV/c];p_{z} [MeV/c]", 120, -120.0, 120.0, 120, -120.0, 120.0, 120, -120.0, 120.0);
 
   //---------------------------------------------------------------------------------------------------------------------------
   //Read the input file, two lines per event
@@ -261,6 +263,8 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
     //Fill angular distribution for each electron separately
     hCosThetaPhiAll->Fill(std::cos(sphericalVector1[1]), sphericalVector1[2]);
     hCosThetaPhiAll->Fill(std::cos(sphericalVector2[1]), sphericalVector2[2]);
+    hMom3D->Fill(cartesianVector1[0], cartesianVector1[1], cartesianVector1[2]);
+    hMom3D->Fill(cartesianVector2[0], cartesianVector2[1], cartesianVector2[2]);
 
     //-------------------------------------------------------------------------------------------------------------------------
     //Forward/backward definition based on pz of electron 1 (adjust if needed)
@@ -324,6 +328,13 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
   TCanvas* cCosThetaPhiAll = new TCanvas("cCosThetaPhiAll", "All Electrons CosTheta vs Phi", 900, 700);
   hCosThetaPhiAll->Draw("COLZ");
   cCosThetaPhiAll->SaveAs("GenBasicTTree_AllElectrons_CosThetaPhi.pdf");
+
+  //3D momentum distribution (interactive in ROOT, static PDF at a chosen view angle)
+  TCanvas* cMom3D = new TCanvas("cMom3D", "Momentum 3D", 900, 700);
+  cMom3D->SetTheta(30.0); //viewing angle for static snapshot
+  cMom3D->SetPhi(45.0);
+  hMom3D->Draw("BOX2Z");
+  cMom3D->SaveAs("GenBasicTTree_Momentum3D_View.pdf");
 
   //Print event counts
   cout << "Total events processed: " << i_event << endl;

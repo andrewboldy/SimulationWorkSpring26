@@ -82,6 +82,9 @@
 ./GenBasicTTree_C.so: /cvmfs/mu2e.opensciencegrid.org/spackages/241207/spack/opt/spack/linux-almalinux9-x86_64_v2/gcc-13.3.0/root-6.32.06-oxcmy6p7yuy2lptemnwcizm3fov6fugi/include/root/TH2.h
 ./GenBasicTTree_C.so: /cvmfs/mu2e.opensciencegrid.org/spackages/241207/spack/opt/spack/linux-almalinux9-x86_64_v2/gcc-13.3.0/root-6.32.06-oxcmy6p7yuy2lptemnwcizm3fov6fugi/include/root/TMatrixFBasefwd.h
 ./GenBasicTTree_C.so: /cvmfs/mu2e.opensciencegrid.org/spackages/241207/spack/opt/spack/linux-almalinux9-x86_64_v2/gcc-13.3.0/root-6.32.06-oxcmy6p7yuy2lptemnwcizm3fov6fugi/include/root/TMatrixDBasefwd.h
+./GenBasicTTree_C.so: /cvmfs/mu2e.opensciencegrid.org/spackages/241207/spack/opt/spack/linux-almalinux9-x86_64_v2/gcc-13.3.0/root-6.32.06-oxcmy6p7yuy2lptemnwcizm3fov6fugi/include/root/TH3D.h
+./GenBasicTTree_C.so: /cvmfs/mu2e.opensciencegrid.org/spackages/241207/spack/opt/spack/linux-almalinux9-x86_64_v2/gcc-13.3.0/root-6.32.06-oxcmy6p7yuy2lptemnwcizm3fov6fugi/include/root/TH3.h
+./GenBasicTTree_C.so: /cvmfs/mu2e.opensciencegrid.org/spackages/241207/spack/opt/spack/linux-almalinux9-x86_64_v2/gcc-13.3.0/root-6.32.06-oxcmy6p7yuy2lptemnwcizm3fov6fugi/include/root/TAtt3D.h
 ./GenBasicTTree_C.so: /cvmfs/mu2e.opensciencegrid.org/spackages/241207/spack/opt/spack/linux-almalinux9-x86_64_v2/gcc-13.3.0/root-6.32.06-oxcmy6p7yuy2lptemnwcizm3fov6fugi/include/root/TCanvas.h
 ./GenBasicTTree_C.so: /cvmfs/mu2e.opensciencegrid.org/spackages/241207/spack/opt/spack/linux-almalinux9-x86_64_v2/gcc-13.3.0/root-6.32.06-oxcmy6p7yuy2lptemnwcizm3fov6fugi/include/root/TPad.h
 ./GenBasicTTree_C.so: /cvmfs/mu2e.opensciencegrid.org/spackages/241207/spack/opt/spack/linux-almalinux9-x86_64_v2/gcc-13.3.0/root-6.32.06-oxcmy6p7yuy2lptemnwcizm3fov6fugi/include/root/TVirtualPad.h
