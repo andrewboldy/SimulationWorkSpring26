@@ -136,6 +136,7 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
   TH2D* hForward = new TH2D("hForward", "Forward electrons;#theta [rad];#phi [rad]", 100, 0.0, M_PI, 100, -M_PI, M_PI);
   TH2D* hBackward = new TH2D("hBackward", "Backward electrons;#theta [rad];#phi [rad]", 100, 0.0, M_PI, 100, -M_PI, M_PI);
   TH1D* hCosTheta = new TH1D("hCosTheta", "Back-to-back check;cos(#theta);Counts", 200, -1.1, 1.1);
+  TH2D* hCosThetaPhi = new TH2D("hCosThetaPhi", "Uniformity check;cos(#theta);#phi [rad]", 200, -1.0, 1.0, 100, -M_PI, M_PI);
 
   //Population of Branches
   string line1;
@@ -203,6 +204,7 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
     }
 
     hCosTheta->Fill(cosTheta);
+    hCosThetaPhi->Fill(cosTheta, sphericalVector1[2]);
 
     //Forward/backward definition based on pz of electron 1 (adjust if needed)
     if (cartesianVector1[2] >= 0.0)
@@ -246,6 +248,10 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
   hCosTheta->Draw();
   cB2B->SaveAs("GenBasicTTree_CosTheta.pdf");
 
+  TCanvas* cCosThetaPhi = new TCanvas("cCosThetaPhi", "CosTheta vs Phi", 900, 700);
+  hCosThetaPhi->Draw("COLZ");
+  cCosThetaPhi->SaveAs("GenBasicTTree_CosThetaPhi.pdf");
+
   cout << "Total events processed: " << i_event << endl;
   cout << "Back-to-back pairs: " << b2bCount << endl;
 
@@ -254,4 +260,3 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
   delete file;
   return;
 } //end GenBasicTTree method
-
