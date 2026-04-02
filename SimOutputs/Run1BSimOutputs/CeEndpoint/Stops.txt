@@ -1,2 +1,0 @@
-sim.mu2e.MuminusStopsCat.Run1Baa.001440_00000001.art
-sim.mu2e.MuminusStopsCat.Run1Baa.001440_00000000.art

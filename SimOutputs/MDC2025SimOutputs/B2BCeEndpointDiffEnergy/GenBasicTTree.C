@@ -187,7 +187,7 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
   TH2D* hForward = new TH2D("hForward", "Forward electrons;#theta [rad];#phi [rad]", 100, 0.0, M_PI, 100, -M_PI, M_PI);
   TH2D* hBackward = new TH2D("hBackward", "Backward electrons;#theta [rad];#phi [rad]", 100, 0.0, M_PI, 100, -M_PI, M_PI);
   TH1D* hCosTheta = new TH1D("hCosTheta", "Back-to-back check;cos(#theta);Counts", 200, -1.1, 1.1);
-  TH1D* hOpeningAngle = new TH1D("hOpeningAngle", "Opening angle;cos(#theta_{12});Counts", 200, -1.0, 1.0);
+  TH1D* hOpeningAngle = new TH1D("hOpeningAngle", "Opening angle;cos(#alpha);Counts", 200, -1.0, 1.0);
   TH2D* hCosThetaPhiAll = new TH2D("hCosThetaPhiAll", "Angular dependence of all event electrons;cos(#theta);#phi [rad]", 200, -1.0, 1.0, 100, -M_PI, M_PI);
   TH2D* thetaCompare = new TH2D("thetaCompare", "Theta comparison;#theta_{1} [rad];#theta_{2} [rad]", 100, 0.0, M_PI, 100, 0.0, M_PI);
   TH2D* momCompare = new TH2D("momCompare", "Momentum magnitude comparison;|p_{1}| [MeV/c];|p_{2}| [MeV/c]", 120, 0.0, 120.0, 120, 0.0, 120.0);
@@ -291,7 +291,7 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
     hMom3D->Fill(cartesianVector2[0], cartesianVector2[1], cartesianVector2[2]);
 
     //-------------------------------------------------------------------------------------------------------------------------
-    //Forward/backward definition based on pz of electron 1 (adjust if needed)
+    //Forward/backward definition based on each electron's pz (fill both electrons)
     //-------------------------------------------------------------------------------------------------------------------------
     if (cartesianVector1[2] >= 0.0)
     {
@@ -300,6 +300,15 @@ void GenBasicTTree(const string& inputFile, bool skipFirstLine = false)
     else
     {
       hBackward->Fill(sphericalVector1[1], sphericalVector1[2]);
+    }
+
+    if (cartesianVector2[2] >= 0.0)
+    {
+      hForward->Fill(sphericalVector2[1], sphericalVector2[2]);
+    }
+    else
+    {
+      hBackward->Fill(sphericalVector2[1], sphericalVector2[2]);
     }
 
     //-------------------------------------------------------------------------------------------------------------------------
