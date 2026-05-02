@@ -95,6 +95,7 @@ namespace {
     XYZVectorF refPos = XYZVectorF();   // Same as point, saved separately for readability in later logic
     int pdg = 0;                        // Track fit hypothesis PDG code
     int trackIndex = -1;                // Which track in the event this came from
+    bool rank0Electron = false;         // True if the track's MC rank-0 match is an electron
   };
 
   //----------------------------------------------------------------------------
@@ -179,6 +180,28 @@ namespace {
   //----------------------------------------------------------------------------
   bool hasRecoSegmentAtSurface(TrackSegment& segment, int sid) {
     return has_reco_step(segment) && segment.trkseg->sid == sid;
+  }
+
+  //----------------------------------------------------------------------------
+  // Determine whether a reconstructed track is matched to a rank-0 electron.
+  //
+  // In RooUtil / EventNtuple language:
+  //   - `is_track_particle` means "the MC particle with the most hits on the
+  //     track" and also requires `rank == 0`
+  //   - we then additionally require that this best-matched MC particle is an
+  //     electron
+  //
+  // This is useful because it suppresses many tracker-ionization byproducts and
+  // lets us study a cleaner subset of reconstructed electron-like tracks.
+  //----------------------------------------------------------------------------
+  bool isRank0ElectronTrack(Track& track) {
+    auto matchedParticles = track.GetMCParticles(is_track_particle);
+    if (matchedParticles.empty() || matchedParticles.at(0).mcsim == nullptr) {
+      return false;
+    }
+
+    const auto pdg = static_cast<mu2e::PDGCode::type>(matchedParticles.at(0).mcsim->pdg);
+    return pdg == mu2e::PDGCode::e_minus || pdg == mu2e::PDGCode::e_plus;
   }
 
   //----------------------------------------------------------------------------
@@ -296,6 +319,7 @@ namespace {
     EntranceLine result;
     result.trackIndex = trackIndex;
     result.pdg = track.trk->pdg;
+    result.rank0Electron = isRank0ElectronTrack(track);
 
     unique_ptr<TrackSegment> front(findFirstRecoSegmentAtSurface(track, mu2e::SurfaceIdDetail::TT_Front));
     if (!front || front->trkseg == nullptr) {
@@ -436,6 +460,55 @@ void plotRecoCommonOriginCandidates(const string& sampleName, const string& file
       120, -7000.0, 3000.0,
       120, -1000.0, 1000.0);
 
+  //----------------------------------------------------------------------------
+  // Additional histograms for the cleaner subset in which BOTH reconstructed
+  // tracks are matched to rank-0 electrons.
+  //
+  // This is meant to reduce the flood of tracker-produced secondaries and focus
+  // more directly on pairs whose best MC association is electron-like.
+  //----------------------------------------------------------------------------
+  TH1F* hPairDCARank0Electron = new TH1F(
+      "hPairDCARank0Electron",
+      (sampleName + " Pair DCA for Rank-0 Electron Track Pairs;Pair DCA [mm];Entries").c_str(),
+      100, 0.0, 500.0);
+
+  TH1F* hPairDCARank0ElectronUpstream = new TH1F(
+      "hPairDCARank0ElectronUpstream",
+      (sampleName + " Pair DCA for Rank-0 Electron Track Pairs (Upstream Only);Pair DCA [mm];Entries").c_str(),
+      100, 0.0, 500.0);
+
+  TH1F* hVertexZRank0Electron = new TH1F(
+      "hVertexZRank0Electron",
+      (sampleName + " Candidate Common-Origin Z for Rank-0 Electron Track Pairs;Candidate Z [mm];Entries").c_str(),
+      120, -7000.0, 3000.0);
+
+  TH1F* hVertexZRank0ElectronUpstream = new TH1F(
+      "hVertexZRank0ElectronUpstream",
+      (sampleName + " Candidate Common-Origin Z for Rank-0 Electron Track Pairs (Upstream Only);Candidate Z [mm];Entries").c_str(),
+      120, -7000.0, 3000.0);
+
+  TH1F* hVertexRRank0Electron = new TH1F(
+      "hVertexRRank0Electron",
+      (sampleName + " Candidate Common-Origin Radius for Rank-0 Electron Track Pairs;Candidate Radius [mm];Entries").c_str(),
+      120, 0.0, 1000.0);
+
+  TH1F* hVertexRRank0ElectronUpstream = new TH1F(
+      "hVertexRRank0ElectronUpstream",
+      (sampleName + " Candidate Common-Origin Radius for Rank-0 Electron Track Pairs (Upstream Only);Candidate Radius [mm];Entries").c_str(),
+      120, 0.0, 1000.0);
+
+  TH2F* hVertexXZRank0Electron = new TH2F(
+      "hVertexXZRank0Electron",
+      (sampleName + " Candidate Common-Origin Map for Rank-0 Electron Track Pairs;z [mm];x [mm]").c_str(),
+      120, -7000.0, 3000.0,
+      120, -1000.0, 1000.0);
+
+  TH2F* hVertexXZRank0ElectronUpstream = new TH2F(
+      "hVertexXZRank0ElectronUpstream",
+      (sampleName + " Candidate Common-Origin Map for Rank-0 Electron Track Pairs (Upstream Only);z [mm];x [mm]").c_str(),
+      120, -7000.0, 3000.0,
+      120, -1000.0, 1000.0);
+
   hPairDCAAll->SetLineColor(kBlue + 1);
   hPairDCAAll->SetLineWidth(2);
   hPairDCAUpstream->SetLineColor(kRed + 1);
@@ -451,6 +524,21 @@ void plotRecoCommonOriginCandidates(const string& sampleName, const string& file
   hVertexRUpstream->SetLineColor(kRed + 1);
   hVertexRUpstream->SetLineWidth(2);
 
+  hPairDCARank0Electron->SetLineColor(kMagenta + 2);
+  hPairDCARank0Electron->SetLineWidth(2);
+  hPairDCARank0ElectronUpstream->SetLineColor(kOrange + 7);
+  hPairDCARank0ElectronUpstream->SetLineWidth(2);
+
+  hVertexZRank0Electron->SetLineColor(kMagenta + 2);
+  hVertexZRank0Electron->SetLineWidth(2);
+  hVertexZRank0ElectronUpstream->SetLineColor(kOrange + 7);
+  hVertexZRank0ElectronUpstream->SetLineWidth(2);
+
+  hVertexRRank0Electron->SetLineColor(kMagenta + 2);
+  hVertexRRank0Electron->SetLineWidth(2);
+  hVertexRRank0ElectronUpstream->SetLineColor(kOrange + 7);
+  hVertexRRank0ElectronUpstream->SetLineWidth(2);
+
   //----------------------------------------------------------------------------
   // Open the EventNtuple through RooUtil.
   //----------------------------------------------------------------------------
@@ -464,6 +552,9 @@ void plotRecoCommonOriginCandidates(const string& sampleName, const string& file
   int numUsableLines = 0;
   int numPairsTested = 0;
   int numUpstreamPairs = 0;
+  int numRank0ElectronTracks = 0;
+  int numRank0ElectronPairs = 0;
+  int numRank0ElectronUpstreamPairs = 0;
 
   if (inputIsRootFile) {
     cout << "Reading a single ROOT file: " << filelist << endl;
@@ -504,6 +595,9 @@ void plotRecoCommonOriginCandidates(const string& sampleName, const string& file
       EntranceLine entranceLine = buildEntranceLine(tracks.at(i_track), static_cast<int>(i_track));
       if (entranceLine.valid) {
         ++numUsableLines;
+        if (entranceLine.rank0Electron) {
+          ++numRank0ElectronTracks;
+        }
         lines.push_back(entranceLine);
       }
     }
@@ -552,6 +646,7 @@ void plotRecoCommonOriginCandidates(const string& sampleName, const string& file
         const bool upstreamForTrack1 = (s1 < 0.0);
         const bool upstreamForTrack2 = (s2 < 0.0);
         const bool upstreamForBoth = upstreamForTrack1 && upstreamForTrack2;
+        const bool bothRank0Electrons = line1.rank0Electron && line2.rank0Electron;
 
         // Fill inclusive histograms first.
         hPairDCAAll->Fill(dca);
@@ -567,6 +662,24 @@ void plotRecoCommonOriginCandidates(const string& sampleName, const string& file
           hVertexRUpstream->Fill(vertexEstimate.Rho());
           hVertexXZUpstream->Fill(vertexEstimate.Z(), vertexEstimate.X());
         }
+
+        // Fill the rank-0-electron-only histograms if BOTH tracks in the pair
+        // are matched to rank-0 electrons.
+        if (bothRank0Electrons) {
+          ++numRank0ElectronPairs;
+          hPairDCARank0Electron->Fill(dca);
+          hVertexZRank0Electron->Fill(vertexEstimate.Z());
+          hVertexRRank0Electron->Fill(vertexEstimate.Rho());
+          hVertexXZRank0Electron->Fill(vertexEstimate.Z(), vertexEstimate.X());
+
+          if (upstreamForBoth) {
+            ++numRank0ElectronUpstreamPairs;
+            hPairDCARank0ElectronUpstream->Fill(dca);
+            hVertexZRank0ElectronUpstream->Fill(vertexEstimate.Z());
+            hVertexRRank0ElectronUpstream->Fill(vertexEstimate.Rho());
+            hVertexXZRank0ElectronUpstream->Fill(vertexEstimate.Z(), vertexEstimate.X());
+          }
+        }
       }
     }
   }
@@ -576,8 +689,11 @@ void plotRecoCommonOriginCandidates(const string& sampleName, const string& file
   //----------------------------------------------------------------------------
   cout << "Processed " << numTracksSeen << " reconstructed track hypotheses." << endl;
   cout << "Built " << numUsableLines << " usable local entrance-line approximations." << endl;
+  cout << numRank0ElectronTracks << " of those usable tracks are matched to rank-0 electrons." << endl;
   cout << "Tested " << numPairsTested << " reconstructed track pairs." << endl;
   cout << numUpstreamPairs << " pairs had their closest-approach points upstream of TT_Front for both tracks." << endl;
+  cout << numRank0ElectronPairs << " tested pairs had both tracks matched to rank-0 electrons." << endl;
+  cout << numRank0ElectronUpstreamPairs << " rank-0-electron pairs also had upstream closest approach for both tracks." << endl;
 
   //----------------------------------------------------------------------------
   // Draw pair DCA comparison.
@@ -639,6 +755,59 @@ void plotRecoCommonOriginCandidates(const string& sampleName, const string& file
   TCanvas* cMapUpstream = new TCanvas("cMapUpstream", "Candidate Common-Origin Map (Upstream Pairs)", 900, 700);
   hVertexXZUpstream->Draw("COLZ");
   cMapUpstream->SaveAs(("RecoCommonOrigin_MapUpstream_" + safeSampleName + ".pdf").c_str());
+
+  //----------------------------------------------------------------------------
+  // Draw pair DCA comparison for rank-0-electron-only pairs.
+  //----------------------------------------------------------------------------
+  TCanvas* cPairDCARank0 = new TCanvas("cPairDCARank0", "Pair DCA Comparison Rank-0 Electrons", 900, 700);
+  double maxDCARank0 = max(hPairDCARank0Electron->GetMaximum(), hPairDCARank0ElectronUpstream->GetMaximum());
+  hPairDCARank0Electron->SetMaximum(1.15 * maxDCARank0);
+  hPairDCARank0Electron->Draw("HIST E");
+  hPairDCARank0ElectronUpstream->Draw("HIST E SAME");
+  TLegend* legDCARank0 = new TLegend(0.48, 0.72, 0.88, 0.88);
+  legDCARank0->AddEntry(hPairDCARank0Electron, "Rank-0 electron track pairs", "l");
+  legDCARank0->AddEntry(hPairDCARank0ElectronUpstream, "Rank-0 electron pairs with upstream closest approach", "l");
+  legDCARank0->Draw();
+  cPairDCARank0->SaveAs(("RecoCommonOrigin_PairDCA_Rank0Electron_" + safeSampleName + ".pdf").c_str());
+
+  //----------------------------------------------------------------------------
+  // Draw candidate vertex Z comparison for rank-0-electron-only pairs.
+  //----------------------------------------------------------------------------
+  TCanvas* cVertexZRank0 = new TCanvas("cVertexZRank0", "Candidate Vertex Z Rank-0 Electrons", 900, 700);
+  double maxVertexZRank0 = max(hVertexZRank0Electron->GetMaximum(), hVertexZRank0ElectronUpstream->GetMaximum());
+  hVertexZRank0Electron->SetMaximum(1.15 * maxVertexZRank0);
+  hVertexZRank0Electron->Draw("HIST E");
+  hVertexZRank0ElectronUpstream->Draw("HIST E SAME");
+  TLegend* legZRank0 = new TLegend(0.48, 0.72, 0.88, 0.88);
+  legZRank0->AddEntry(hVertexZRank0Electron, "Rank-0 electron track pairs", "l");
+  legZRank0->AddEntry(hVertexZRank0ElectronUpstream, "Rank-0 electron pairs with upstream closest approach", "l");
+  legZRank0->Draw();
+  cVertexZRank0->SaveAs(("RecoCommonOrigin_VertexZ_Rank0Electron_" + safeSampleName + ".pdf").c_str());
+
+  //----------------------------------------------------------------------------
+  // Draw candidate vertex radius comparison for rank-0-electron-only pairs.
+  //----------------------------------------------------------------------------
+  TCanvas* cVertexRRank0 = new TCanvas("cVertexRRank0", "Candidate Vertex Radius Rank-0 Electrons", 900, 700);
+  double maxVertexRRank0 = max(hVertexRRank0Electron->GetMaximum(), hVertexRRank0ElectronUpstream->GetMaximum());
+  hVertexRRank0Electron->SetMaximum(1.15 * maxVertexRRank0);
+  hVertexRRank0Electron->Draw("HIST E");
+  hVertexRRank0ElectronUpstream->Draw("HIST E SAME");
+  TLegend* legRRank0 = new TLegend(0.48, 0.72, 0.88, 0.88);
+  legRRank0->AddEntry(hVertexRRank0Electron, "Rank-0 electron track pairs", "l");
+  legRRank0->AddEntry(hVertexRRank0ElectronUpstream, "Rank-0 electron pairs with upstream closest approach", "l");
+  legRRank0->Draw();
+  cVertexRRank0->SaveAs(("RecoCommonOrigin_VertexR_Rank0Electron_" + safeSampleName + ".pdf").c_str());
+
+  //----------------------------------------------------------------------------
+  // Draw 2D origin maps for rank-0-electron-only pairs.
+  //----------------------------------------------------------------------------
+  TCanvas* cMapRank0 = new TCanvas("cMapRank0", "Candidate Common-Origin Map Rank-0 Electrons", 900, 700);
+  hVertexXZRank0Electron->Draw("COLZ");
+  cMapRank0->SaveAs(("RecoCommonOrigin_MapAll_Rank0Electron_" + safeSampleName + ".pdf").c_str());
+
+  TCanvas* cMapRank0Upstream = new TCanvas("cMapRank0Upstream", "Candidate Common-Origin Map Rank-0 Electrons Upstream", 900, 700);
+  hVertexXZRank0ElectronUpstream->Draw("COLZ");
+  cMapRank0Upstream->SaveAs(("RecoCommonOrigin_MapUpstream_Rank0Electron_" + safeSampleName + ".pdf").c_str());
 
   //----------------------------------------------------------------------------
   // Final note printed to the terminal so it is obvious what this macro is and
