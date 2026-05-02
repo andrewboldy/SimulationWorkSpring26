@@ -1,6 +1,8 @@
 //----------------------------------------------------------------------------------
 //
 // plotRecoTrackSegmentHists.C
+// Written by Andrew Boldy University of South Carolina, 2026
+// Assisted by Codex
 //
 // Read reconstructed track-segment information from EventNtuple `trksegs`
 // and make momentum/energy histograms at multiple tracker surfaces.
@@ -10,7 +12,7 @@
 // reconstructed track intersections instead of MC-truth genealogy.
 //
 // Example:
-// root -l -b -q 'CreatedCode/HistogramMakers/plotRecoTrackSegmentHists.C+("CeEndpoint","myfiles.txt")'
+// root -l -b -q 'plotRecoTrackSegmentHists.C++("B2BCeEndpointDiffEnergy","myfiles.txt")'
 //
 //----------------------------------------------------------------------------------
 
@@ -129,8 +131,8 @@ void plotRecoTrackSegmentHists(const string& generatorName, const string& fileli
     const string momTitle = generatorName + " Reco Momentum at " + surface.title + ";p [MeV/c];Entries";
     const string eneTitle = generatorName + " Reco Energy at " + surface.title + ";E [MeV];Entries";
 
-    TH1F* hMom = new TH1F(momName.c_str(), momTitle.c_str(), 80, 90.0, 115.0);
-    TH1F* hEne = new TH1F(eneName.c_str(), eneTitle.c_str(), 80, 90.0, 115.0);
+    TH1F* hMom = new TH1F(momName.c_str(), momTitle.c_str(), 80, 30.0, 110.0);
+    TH1F* hEne = new TH1F(eneName.c_str(), eneTitle.c_str(), 80, 30.0, 110.0);
     hMom->SetLineColor(surface.color);
     hMom->SetLineWidth(2);
     hEne->SetLineColor(surface.color);
@@ -154,7 +156,6 @@ void plotRecoTrackSegmentHists(const string& generatorName, const string& fileli
     auto& event = util.GetEvent(i_event);
 
     //Get the reconstructed e_minus track hypotheses from the event
-    //This mirrors the style of the previous macro, but now we use reconstructed tracks instead of MC truth
     auto eMinusTracks = event.GetTracks(is_e_minus);
 
     //Loop through the reconstructed e_minus tracks
@@ -250,5 +251,58 @@ void plotRecoTrackSegmentHists(const string& generatorName, const string& fileli
   }
   energyLeg->Draw();
   cOverlayEnergy->SaveAs(("RecoTrackSegmentEnergyOverlay_" + safeGeneratorName + ".pdf").c_str());
+
+  //Draw and save the momentum histograms without error bars
+  TCanvas* cMomNoE = new TCanvas("cRecoMomNoE", "Reco Track Segment Momentum No Errors", 1500, 450);
+  cMomNoE->Divide(static_cast<int>(surfaces.size()), 1);
+  for (size_t i_surface = 0; i_surface < surfaces.size(); ++i_surface) {
+    cMomNoE->cd(static_cast<int>(i_surface) + 1);
+    momentumHists[i_surface]->Draw("HIST");
+  }
+  cMomNoE->SaveAs(("RecoTrackSegmentMomentumNoE_" + safeGeneratorName + ".pdf").c_str());
+
+  //Draw and save the energy histograms without error bars
+  TCanvas* cEnergyNoE = new TCanvas("cRecoEnergyNoE", "Reco Track Segment Energy No Errors", 1500, 450);
+  cEnergyNoE->Divide(static_cast<int>(surfaces.size()), 1);
+  for (size_t i_surface = 0; i_surface < surfaces.size(); ++i_surface) {
+    cEnergyNoE->cd(static_cast<int>(i_surface) + 1);
+    energyHists[i_surface]->Draw("HIST");
+  }
+  cEnergyNoE->SaveAs(("RecoTrackSegmentEnergyNoE_" + safeGeneratorName + ".pdf").c_str());
+
+  //Create an overlay plot for the reconstructed momentum without error bars
+  TCanvas* cOverlayMomNoE = new TCanvas("cOverlayMomNoE", "Reco Momentum Comparison No Errors", 900, 700);
+  double maxMomNoE = 0.0;
+  for (auto* hist : momentumHists) {
+    maxMomNoE = max(maxMomNoE, hist->GetMaximum());
+  }
+  for (size_t i_surface = 0; i_surface < momentumHists.size(); ++i_surface) {
+    momentumHists[i_surface]->SetMaximum(1.15 * maxMomNoE);
+    momentumHists[i_surface]->Draw(i_surface == 0 ? "HIST" : "HIST SAME");
+  }
+  TLegend* momLegNoE = new TLegend(0.58, 0.68, 0.88, 0.88);
+  for (size_t i_surface = 0; i_surface < surfaces.size(); ++i_surface) {
+    momLegNoE->AddEntry(momentumHists[i_surface], surfaces[i_surface].title.c_str(), "l");
+  }
+  momLegNoE->Draw();
+  cOverlayMomNoE->SaveAs(("RecoTrackSegmentMomentumOverlayNoE_" + safeGeneratorName + ".pdf").c_str());
+
+  //Create an overlay plot for the reconstructed energy without error bars
+  TCanvas* cOverlayEnergyNoE = new TCanvas("cOverlayEnergyNoE", "Reco Energy Comparison No Errors", 900, 700);
+  double maxEnergyNoE = 0.0;
+  for (auto* hist : energyHists) {
+    maxEnergyNoE = max(maxEnergyNoE, hist->GetMaximum());
+  }
+  for (size_t i_surface = 0; i_surface < energyHists.size(); ++i_surface) {
+    energyHists[i_surface]->SetMaximum(1.15 * maxEnergyNoE);
+    energyHists[i_surface]->Draw(i_surface == 0 ? "HIST" : "HIST SAME");
+  }
+  TLegend* energyLegNoE = new TLegend(0.58, 0.68, 0.88, 0.88);
+  for (size_t i_surface = 0; i_surface < surfaces.size(); ++i_surface) {
+    energyLegNoE->AddEntry(energyHists[i_surface], surfaces[i_surface].title.c_str(), "l");
+  }
+  energyLegNoE->Draw();
+  cOverlayEnergyNoE->SaveAs(("RecoTrackSegmentEnergyOverlayNoE_" + safeGeneratorName + ".pdf").c_str());
 }
+
 
