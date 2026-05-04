@@ -1,3 +1,4 @@
+
 //----------------------------------------------------------------------------------
 //
 // plotRecoCommonOriginCandidates.C
@@ -16,10 +17,11 @@
 //   2. Reconstructed momentum vectors at those segments
 //   3. Known tracker surfaces such as TT_Front, TT_Mid, and TT_Back
 //
-// For each reconstructed track, we build a simple local line approximation near
-// the tracker entrance.  Then, for each pair of tracks in the event, we use the
-// Mu2e helper class `TwoLinePCA_XYZ` to compute the distance of closest
-// approach (DCA) between those two extrapolated lines.
+// For each selected downstream electron reconstructed track, we build a simple
+// local line approximation near the tracker entrance.  Then, for each pair of
+// selected tracks in the event, we use the Mu2e helper class `TwoLinePCA_XYZ` to
+// compute the distance of closest approach (DCA) between those two extrapolated
+// lines.
 //
 // The midpoint of that closest-approach segment is used here as a simple
 // "candidate common origin" estimate.
@@ -41,8 +43,8 @@
 //   - candidate vertex Z histogram
 //   - candidate vertex radius histogram
 //   - 2D map of candidate origin X vs Z
-//   - comparison of all pairs vs pairs whose closest-approach point lies
-//     upstream of the tracker entrance for both tracks
+//   - comparison of all selected downstream-e pairs vs pairs whose closest-
+//     approach point lies upstream of the tracker entrance for both tracks
 //
 //----------------------------------------------------------------------------------
 
@@ -202,6 +204,45 @@ namespace {
 
     const auto pdg = static_cast<mu2e::PDGCode::type>(matchedParticles.at(0).mcsim->pdg);
     return pdg == mu2e::PDGCode::e_minus || pdg == mu2e::PDGCode::e_plus;
+  }
+
+  //----------------------------------------------------------------------------
+  // Select the reconstructed fit hypothesis used by this study.
+  //
+  // We want downstream electron fits only.  In EventNtuple, the electron part is
+  // the fit particle hypothesis (`trk->pdg == e_minus`).  The downstream part is
+  // inferred from the reconstructed momentum direction at a tracker surface.
+  //
+  // Prefer TT_Front because this macro anchors its line approximation there.
+  // Fall back to TT_Mid and TT_Back so the selector remains usable if a given
+  // ntuple does not contain every sampled tracker surface.
+  //----------------------------------------------------------------------------
+  bool isDownstreamElectronTrack(Track& track) {
+    if (!is_e_minus(track)) {
+      return false;
+    }
+
+    const vector<int> directionSurfaces = {
+      mu2e::SurfaceIdDetail::TT_Front,
+      mu2e::SurfaceIdDetail::TT_Mid,
+      mu2e::SurfaceIdDetail::TT_Back
+    };
+
+    for (const int sid : directionSurfaces) {
+      auto segments = track.GetSegments([sid](TrackSegment& segment) {
+        return hasRecoSegmentAtSurface(segment, sid);
+      });
+
+      if (segments.empty()) {
+        continue;
+      }
+
+      return any_of(segments.begin(), segments.end(), [](TrackSegment& segment) {
+        return segment.trkseg != nullptr && segment.trkseg->mom.z() > 0.0;
+      });
+    }
+
+    return false;
   }
 
   //----------------------------------------------------------------------------
@@ -411,52 +452,53 @@ void plotRecoCommonOriginCandidates(const string& sampleName, const string& file
   //----------------------------------------------------------------------------
   // Histograms.
   //
-  // We keep both "all track pairs" and a more restrictive "upstream-only"
-  // category.  The upstream-only category asks whether the estimated closest-
-  // approach point lies behind the tracker entrance for both tracks.
+  // We keep both "all selected downstream-e track pairs" and a more restrictive
+  // "upstream-only" category.  The upstream-only category asks whether the
+  // estimated closest-approach point lies behind the tracker entrance for both
+  // tracks.
   //
   // That is not yet a full vertexing requirement, but it is a physically useful
   // first filter for the kind of common-origin question you asked about.
   //----------------------------------------------------------------------------
   TH1F* hPairDCAAll = new TH1F(
       "hPairDCAAll",
-      (sampleName + " Pair DCA from Backward Extrapolation;Pair DCA [mm];Entries").c_str(),
+      (sampleName + " Downstream e- Pair DCA from Backward Extrapolation;Pair DCA [mm];Entries").c_str(),
       100, 0.0, 500.0);
 
   TH1F* hPairDCAUpstream = new TH1F(
       "hPairDCAUpstream",
-      (sampleName + " Pair DCA (Closest Approach Upstream of Tracker);Pair DCA [mm];Entries").c_str(),
+      (sampleName + " Downstream e- Pair DCA (Closest Approach Upstream of Tracker);Pair DCA [mm];Entries").c_str(),
       100, 0.0, 500.0);
 
   TH1F* hVertexZAll = new TH1F(
       "hVertexZAll",
-      (sampleName + " Candidate Common-Origin Z;Candidate Z [mm];Entries").c_str(),
+      (sampleName + " Downstream e- Candidate Common-Origin Z;Candidate Z [mm];Entries").c_str(),
       120, -7000.0, 3000.0);
 
   TH1F* hVertexZUpstream = new TH1F(
       "hVertexZUpstream",
-      (sampleName + " Candidate Common-Origin Z (Upstream Only);Candidate Z [mm];Entries").c_str(),
+      (sampleName + " Downstream e- Candidate Common-Origin Z (Upstream Only);Candidate Z [mm];Entries").c_str(),
       120, -7000.0, 3000.0);
 
   TH1F* hVertexRAll = new TH1F(
       "hVertexRAll",
-      (sampleName + " Candidate Common-Origin Radius;Candidate Radius [mm];Entries").c_str(),
+      (sampleName + " Downstream e- Candidate Common-Origin Radius;Candidate Radius [mm];Entries").c_str(),
       120, 0.0, 1000.0);
 
   TH1F* hVertexRUpstream = new TH1F(
       "hVertexRUpstream",
-      (sampleName + " Candidate Common-Origin Radius (Upstream Only);Candidate Radius [mm];Entries").c_str(),
+      (sampleName + " Downstream e- Candidate Common-Origin Radius (Upstream Only);Candidate Radius [mm];Entries").c_str(),
       120, 0.0, 1000.0);
 
   TH2F* hVertexXZAll = new TH2F(
       "hVertexXZAll",
-      (sampleName + " Candidate Common-Origin Map;z [mm];x [mm]").c_str(),
+      (sampleName + " Downstream e- Candidate Common-Origin Map;z [mm];x [mm]").c_str(),
       120, -7000.0, 3000.0,
       120, -1000.0, 1000.0);
 
   TH2F* hVertexXZUpstream = new TH2F(
       "hVertexXZUpstream",
-      (sampleName + " Candidate Common-Origin Map (Upstream Only);z [mm];x [mm]").c_str(),
+      (sampleName + " Downstream e- Candidate Common-Origin Map (Upstream Only);z [mm];x [mm]").c_str(),
       120, -7000.0, 3000.0,
       120, -1000.0, 1000.0);
 
@@ -571,17 +613,9 @@ void plotRecoCommonOriginCandidates(const string& sampleName, const string& file
     auto& event = util.GetEvent(i_event);
 
     //------------------------------------------------------------------------
-    // Pull all reconstructed tracks.
-    //
-    // I am intentionally not filtering to just electrons here.  If you want to
-    // narrow this study later, the cleanest option is to replace this with
-    // something like:
-    //
-    //   auto tracks = event.GetTracks(is_e_minus);
-    //
-    // or another selection function from common_cuts.hh.
+    // Pull only downstream electron reconstructed fit hypotheses.
     //------------------------------------------------------------------------
-    auto tracks = event.GetTracks();
+    auto tracks = event.GetTracks(isDownstreamElectronTrack);
 
     vector<EntranceLine> lines;
     lines.reserve(tracks.size());
@@ -605,8 +639,9 @@ void plotRecoCommonOriginCandidates(const string& sampleName, const string& file
     //------------------------------------------------------------------------
     // Pair loop.
     //
-    // For each pair of usable reconstructed tracks, compute the closest
-    // approach between their local backward-extrapolation line approximations.
+    // For each pair of usable downstream electron reconstructed tracks, compute
+    // the closest approach between their local backward-extrapolation line
+    // approximations.
     //------------------------------------------------------------------------
     for (size_t i = 0; i < lines.size(); ++i) {
       for (size_t j = i + 1; j < lines.size(); ++j) {
@@ -687,10 +722,11 @@ void plotRecoCommonOriginCandidates(const string& sampleName, const string& file
   //----------------------------------------------------------------------------
   // Print summary information.
   //----------------------------------------------------------------------------
-  cout << "Processed " << numTracksSeen << " reconstructed track hypotheses." << endl;
+  cout << "Selection: downstream e- reconstructed fit hypotheses only." << endl;
+  cout << "Processed " << numTracksSeen << " selected downstream e- track hypotheses." << endl;
   cout << "Built " << numUsableLines << " usable local entrance-line approximations." << endl;
   cout << numRank0ElectronTracks << " of those usable tracks are matched to rank-0 electrons." << endl;
-  cout << "Tested " << numPairsTested << " reconstructed track pairs." << endl;
+  cout << "Tested " << numPairsTested << " selected downstream e- track pairs." << endl;
   cout << numUpstreamPairs << " pairs had their closest-approach points upstream of TT_Front for both tracks." << endl;
   cout << numRank0ElectronPairs << " tested pairs had both tracks matched to rank-0 electrons." << endl;
   cout << numRank0ElectronUpstreamPairs << " rank-0-electron pairs also had upstream closest approach for both tracks." << endl;
@@ -704,8 +740,8 @@ void plotRecoCommonOriginCandidates(const string& sampleName, const string& file
   hPairDCAAll->Draw("HIST E");
   hPairDCAUpstream->Draw("HIST E SAME");
   TLegend* legDCA = new TLegend(0.56, 0.72, 0.88, 0.88);
-  legDCA->AddEntry(hPairDCAAll, "All reconstructed track pairs", "l");
-  legDCA->AddEntry(hPairDCAUpstream, "Pairs with upstream closest approach", "l");
+  legDCA->AddEntry(hPairDCAAll, "Selected downstream e- track pairs", "l");
+  legDCA->AddEntry(hPairDCAUpstream, "Selected pairs with upstream closest approach", "l");
   legDCA->Draw();
   cPairDCA->SaveAs(("RecoCommonOrigin_PairDCA_" + safeSampleName + ".pdf").c_str());
 
@@ -718,8 +754,8 @@ void plotRecoCommonOriginCandidates(const string& sampleName, const string& file
   hVertexZAll->Draw("HIST E");
   hVertexZUpstream->Draw("HIST E SAME");
   TLegend* legZ = new TLegend(0.56, 0.72, 0.88, 0.88);
-  legZ->AddEntry(hVertexZAll, "All reconstructed track pairs", "l");
-  legZ->AddEntry(hVertexZUpstream, "Pairs with upstream closest approach", "l");
+  legZ->AddEntry(hVertexZAll, "Selected downstream e- track pairs", "l");
+  legZ->AddEntry(hVertexZUpstream, "Selected pairs with upstream closest approach", "l");
   legZ->Draw();
   cVertexZ->SaveAs(("RecoCommonOrigin_VertexZ_" + safeSampleName + ".pdf").c_str());
 
@@ -732,8 +768,8 @@ void plotRecoCommonOriginCandidates(const string& sampleName, const string& file
   hVertexRAll->Draw("HIST E");
   hVertexRUpstream->Draw("HIST E SAME");
   TLegend* legR = new TLegend(0.56, 0.72, 0.88, 0.88);
-  legR->AddEntry(hVertexRAll, "All reconstructed track pairs", "l");
-  legR->AddEntry(hVertexRUpstream, "Pairs with upstream closest approach", "l");
+  legR->AddEntry(hVertexRAll, "Selected downstream e- track pairs", "l");
+  legR->AddEntry(hVertexRUpstream, "Selected pairs with upstream closest approach", "l");
   legR->Draw();
   cVertexR->SaveAs(("RecoCommonOrigin_VertexR_" + safeSampleName + ".pdf").c_str());
 
@@ -748,7 +784,7 @@ void plotRecoCommonOriginCandidates(const string& sampleName, const string& file
   // The more reliable "upstream" classification in this macro is the signed
   // distance test performed along each local line, not the absolute Z value.
   //----------------------------------------------------------------------------
-  TCanvas* cMapAll = new TCanvas("cMapAll", "Candidate Common-Origin Map (All Pairs)", 900, 700);
+  TCanvas* cMapAll = new TCanvas("cMapAll", "Candidate Common-Origin Map (Selected Downstream e- Pairs)", 900, 700);
   hVertexXZAll->Draw("COLZ");
   cMapAll->SaveAs(("RecoCommonOrigin_MapAll_" + safeSampleName + ".pdf").c_str());
 
