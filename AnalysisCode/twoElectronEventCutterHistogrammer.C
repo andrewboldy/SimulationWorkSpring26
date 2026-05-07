@@ -142,6 +142,8 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
     260, originZMin, originZMax, 200, originXYMin, originXYMax);
 
   vector<int> dualElectronEntries;
+  long long selectedAllElectronFills = 0;
+  long long selectedRank0ElectronFills = 0;
   const double pi = acos(-1.0);
   double minElectronAngleDeg = numeric_limits<double>::max();
   double maxElectronAngleDeg = -numeric_limits<double>::max();
@@ -167,16 +169,15 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
     vector<const mu2e::SimInfo*> eventElectrons;
     vector<const mu2e::SimInfo*> eventRank0Electrons;
     auto& event = util.GetEvent(i_event);
-    const auto& e_minus_tracks = event.GetTracks(is_e_minus);
 
-    for (auto &track : e_minus_tracks)
+    if (event.trkmcsim == nullptr)
     {
-      if (track.trkmcsim == nullptr)
-      {
-        continue;
-      }
+      continue;
+    }
 
-      for (const auto &mctrack : *(track.trkmcsim))
+    for (const auto& trackSims : *(event.trkmcsim))
+    {
+      for (const auto& mctrack : trackSims)
       {
         if (!(mctrack.valid && mctrack.pdg == 11))
         {
@@ -190,8 +191,9 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
           eventRank0Electrons.push_back(&mctrack);
           eventElectronAnglesDeg.push_back(getAngleFromZDeg(mctrack.mom));
         } //end work on the electron pdg tracks
-      }//end the interface with the TTree at trkmcsim branch level
-    }//end the interface with the TTree at track level
+      }//end the interface with one track's trkmcsim vector
+    }//end the interface with the event trkmcsim branch
+
     if (numEventElectrons != 2)
     {
       numEventElectrons=0;
@@ -233,6 +235,8 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
         }
       }
       dualElectronEntries.push_back(i_event);
+      selectedAllElectronFills += eventElectrons.size();
+      selectedRank0ElectronFills += eventRank0Electrons.size();
 
       for (const auto* electron : eventElectrons)
       {
@@ -271,6 +275,8 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   {
     cout << "No selected events, so no minimum or maximum electron angle from z-axis was computed." << endl;
   }
+  cout << "Monte Carlo truth electron fills from selected events: all valid electrons = "
+       << selectedAllElectronFills << ", rank-0 electrons = " << selectedRank0ElectronFills << endl;
 
   const string histogramFileName = "twoElectronEvents_" + generatorName + "_histograms.root";
   TFile histogramFile(histogramFileName.c_str(), "RECREATE");
@@ -287,6 +293,34 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   hMCTRank0ElectronOriginXZ->GetXaxis()->SetRangeUser(originZMin, originZMax);
   hMCTRank0ElectronOriginYZ->GetXaxis()->SetRangeUser(originZMin, originZMax);
   cout << "Monte Carlo truth Z plot range: " << originZMin << " to " << originZMax << " mm" << endl;
+  cout << "Momentum histogram entries: all = " << hMCTAllElectronMomentum->GetEntries()
+       << ", rank-0 = " << hMCTRank0ElectronMomentum->GetEntries() << endl;
+  cout << "Momentum histogram visible integrals: all = "
+       << hMCTAllElectronMomentum->Integral(1, hMCTAllElectronMomentum->GetNbinsX())
+       << ", rank-0 = "
+       << hMCTRank0ElectronMomentum->Integral(1, hMCTRank0ElectronMomentum->GetNbinsX()) << endl;
+
+  int rank0GreaterThanAllBins = 0;
+  for (int bin = 0; bin <= hMCTAllElectronMomentum->GetNbinsX() + 1; ++bin)
+  {
+    const double allBinContent = hMCTAllElectronMomentum->GetBinContent(bin);
+    const double rank0BinContent = hMCTRank0ElectronMomentum->GetBinContent(bin);
+    if (rank0BinContent > allBinContent)
+    {
+      ++rank0GreaterThanAllBins;
+      if (rank0GreaterThanAllBins <= 5)
+      {
+        cout << "WARNING: rank-0 momentum bin " << bin
+             << " has " << rank0BinContent
+             << " entries, greater than all-electron bin content "
+             << allBinContent << endl;
+      }
+    }
+  }
+  if (rank0GreaterThanAllBins == 0)
+  {
+    cout << "Momentum sanity check passed: rank-0 is never greater than all electrons bin-by-bin." << endl;
+  }
 
   hMCTAllElectronMomentum->Write();
   hMCTRank0ElectronMomentum->Write();
@@ -310,11 +344,19 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   plotTimer.Start();
 
   TCanvas* cMCTMomentum = new TCanvas("cMCTMomentum", "Monte Carlo truth: trkmcsim momentum", 900, 700);
-  hMCTAllElectronMomentum->SetLineColor(kBlue);
+  hMCTAllElectronMomentum->SetLineColor(kBlack);
   hMCTAllElectronMomentum->SetLineWidth(2);
+  hMCTAllElectronMomentum->SetFillColor(kGray);
+  hMCTAllElectronMomentum->SetFillStyle(3004);
   hMCTRank0ElectronMomentum->SetLineColor(kRed);
   hMCTRank0ElectronMomentum->SetLineWidth(2);
-  hMCTAllElectronMomentum->Draw("HIST E");
+  const double maxMomentumBinContent = max(hMCTAllElectronMomentum->GetMaximum(),
+                                           hMCTRank0ElectronMomentum->GetMaximum());
+  if (maxMomentumBinContent > 0.0)
+  {
+    hMCTAllElectronMomentum->SetMaximum(1.15 * maxMomentumBinContent);
+  }
+  hMCTAllElectronMomentum->Draw("HIST");
   hMCTRank0ElectronMomentum->Draw("HIST E SAME");
   TLegend* momentumLegend = new TLegend(0.60, 0.72, 0.88, 0.88);
   momentumLegend->AddEntry(hMCTAllElectronMomentum, "All electrons", "l");
