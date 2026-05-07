@@ -72,8 +72,9 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   //
   // These histograms are filled only for events that pass the two-electron
   // selection below.  "All electrons" means every valid electron SimInfo object
-  // in the selected tracks' trkmcsim vectors.  "Rank 0" keeps the subset that
-  // EventNtuple classifies as the best MC match to that reconstructed track.
+  // in the selected reconstructed e-minus tracks' trkmcsim vectors.  "Rank 0"
+  // keeps the subset that EventNtuple classifies as the best MC match to that
+  // reconstructed track.
   //----------------------------------------------------------------------------
   const double originXYMin = -1000.0;
   const double originXYMax = 1000.0;
@@ -169,15 +170,16 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
     vector<const mu2e::SimInfo*> eventElectrons;
     vector<const mu2e::SimInfo*> eventRank0Electrons;
     auto& event = util.GetEvent(i_event);
+    const auto& e_minus_tracks = event.GetTracks(is_e_minus);
 
-    if (event.trkmcsim == nullptr)
+    for (auto& track : e_minus_tracks)
     {
-      continue;
-    }
+      if (track.trkmcsim == nullptr)
+      {
+        continue;
+      }
 
-    for (const auto& trackSims : *(event.trkmcsim))
-    {
-      for (const auto& mctrack : trackSims)
+      for (const auto& mctrack : *(track.trkmcsim))
       {
         if (!(mctrack.valid && mctrack.pdg == 11))
         {
@@ -191,8 +193,8 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
           eventRank0Electrons.push_back(&mctrack);
           eventElectronAnglesDeg.push_back(getAngleFromZDeg(mctrack.mom));
         } //end work on the electron pdg tracks
-      }//end the interface with one track's trkmcsim vector
-    }//end the interface with the event trkmcsim branch
+      }//end the interface with the TTree at trkmcsim branch level
+    }//end the interface with the reconstructed e-minus track level
 
     if (numEventElectrons != 2)
     {
