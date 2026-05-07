@@ -80,15 +80,17 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   const double originXYMax = 1000.0;
   const double originZMin = -10000.0;
   const double originZMax = 16000.0;
+  const double momentumMin = 0.0;
+  const double momentumMax = 65.0;
 
   TH1F* hMCTAllElectronMomentum = new TH1F(
     "hMCTAllElectronMomentum",
     "Monte Carlo truth: all trkmcsim electrons;trkmcsim momentum [MeV/c];Electrons",
-    200, 0.0, 200.0);
+    130, momentumMin, momentumMax);
   TH1F* hMCTRank0ElectronMomentum = new TH1F(
     "hMCTRank0ElectronMomentum",
     "Monte Carlo truth: rank-0 trkmcsim electrons;trkmcsim momentum [MeV/c];Electrons",
-    200, 0.0, 200.0);
+    130, momentumMin, momentumMax);
 
   TH1F* hMCTAllElectronOriginX = new TH1F(
     "hMCTAllElectronOriginX",
@@ -151,16 +153,16 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   //----------------------------------------------------------------------------
   TH1F* hRecoTrkSegMomentumFront = new TH1F(
     "hRecoTrkSegMomentumFront",
-    "Reconstructed trksegs momentum at TT_Front;trksegs momentum [MeV/c];Segments",
-    200, 0.0, 200.0);
+    "Reconstructed trksegs momentum at tracker surfaces;trksegs momentum [MeV/c];Segments",
+    130, momentumMin, momentumMax);
   TH1F* hRecoTrkSegMomentumMiddle = new TH1F(
     "hRecoTrkSegMomentumMiddle",
     "Reconstructed trksegs momentum at TT_Mid;trksegs momentum [MeV/c];Segments",
-    200, 0.0, 200.0);
+    130, momentumMin, momentumMax);
   TH1F* hRecoTrkSegMomentumBack = new TH1F(
     "hRecoTrkSegMomentumBack",
     "Reconstructed trksegs momentum at TT_Back;trksegs momentum [MeV/c];Segments",
-    200, 0.0, 200.0);
+    130, momentumMin, momentumMax);
 
   vector<int> dualElectronEntries;
   long long selectedAllElectronFills = 0;
