@@ -142,9 +142,32 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
     "Monte Carlo truth: rank-0 trkmcsim electron origins YZ;origin z [mm];origin y [mm]",
     260, originZMin, originZMax, 200, originXYMin, originXYMax);
 
+  //----------------------------------------------------------------------------
+  // Reconstructed track-segment momentum
+  //
+  // These histograms use the reconstructed momentum stored in the trksegs
+  // branch at the tracker front, middle, and back surfaces for the same
+  // selected two-electron events.
+  //----------------------------------------------------------------------------
+  TH1F* hRecoTrkSegMomentumFront = new TH1F(
+    "hRecoTrkSegMomentumFront",
+    "Reconstructed trksegs momentum at TT_Front;trksegs momentum [MeV/c];Segments",
+    200, 0.0, 200.0);
+  TH1F* hRecoTrkSegMomentumMiddle = new TH1F(
+    "hRecoTrkSegMomentumMiddle",
+    "Reconstructed trksegs momentum at TT_Mid;trksegs momentum [MeV/c];Segments",
+    200, 0.0, 200.0);
+  TH1F* hRecoTrkSegMomentumBack = new TH1F(
+    "hRecoTrkSegMomentumBack",
+    "Reconstructed trksegs momentum at TT_Back;trksegs momentum [MeV/c];Segments",
+    200, 0.0, 200.0);
+
   vector<int> dualElectronEntries;
   long long selectedAllElectronFills = 0;
   long long selectedRank0ElectronFills = 0;
+  long long selectedRecoTrkSegFrontFills = 0;
+  long long selectedRecoTrkSegMiddleFills = 0;
+  long long selectedRecoTrkSegBackFills = 0;
   const double pi = acos(-1.0);
   double minElectronAngleDeg = numeric_limits<double>::max();
   double maxElectronAngleDeg = -numeric_limits<double>::max();
@@ -169,11 +192,37 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
     vector<double> eventElectronAnglesDeg;
     vector<const mu2e::SimInfo*> eventElectrons;
     vector<const mu2e::SimInfo*> eventRank0Electrons;
+    vector<double> eventRecoTrkSegFrontMomenta;
+    vector<double> eventRecoTrkSegMiddleMomenta;
+    vector<double> eventRecoTrkSegBackMomenta;
     auto& event = util.GetEvent(i_event);
-    const auto& e_minus_tracks = event.GetTracks(is_e_minus);
+    auto e_minus_tracks = event.GetTracks(is_e_minus);
 
     for (auto& track : e_minus_tracks)
     {
+      auto frontSegments = track.GetSegments([](TrackSegment& segment) {
+        return has_reco_step(segment) && tracker_entrance(segment);
+      });
+      auto middleSegments = track.GetSegments([](TrackSegment& segment) {
+        return has_reco_step(segment) && tracker_middle(segment);
+      });
+      auto backSegments = track.GetSegments([](TrackSegment& segment) {
+        return has_reco_step(segment) && tracker_exit(segment);
+      });
+
+      for (auto& segment : frontSegments)
+      {
+        eventRecoTrkSegFrontMomenta.push_back(segment.trkseg->mom.R());
+      }
+      for (auto& segment : middleSegments)
+      {
+        eventRecoTrkSegMiddleMomenta.push_back(segment.trkseg->mom.R());
+      }
+      for (auto& segment : backSegments)
+      {
+        eventRecoTrkSegBackMomenta.push_back(segment.trkseg->mom.R());
+      }
+
       if (track.trkmcsim == nullptr)
       {
         continue;
@@ -239,6 +288,9 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
       dualElectronEntries.push_back(i_event);
       selectedAllElectronFills += eventElectrons.size();
       selectedRank0ElectronFills += eventRank0Electrons.size();
+      selectedRecoTrkSegFrontFills += eventRecoTrkSegFrontMomenta.size();
+      selectedRecoTrkSegMiddleFills += eventRecoTrkSegMiddleMomenta.size();
+      selectedRecoTrkSegBackFills += eventRecoTrkSegBackMomenta.size();
 
       for (const auto* electron : eventElectrons)
       {
@@ -262,6 +314,19 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
         hMCTRank0ElectronOriginYZ->Fill(electron->pos.z(), electron->pos.y());
       }
 
+      for (const double momentum : eventRecoTrkSegFrontMomenta)
+      {
+        hRecoTrkSegMomentumFront->Fill(momentum);
+      }
+      for (const double momentum : eventRecoTrkSegMiddleMomenta)
+      {
+        hRecoTrkSegMomentumMiddle->Fill(momentum);
+      }
+      for (const double momentum : eventRecoTrkSegBackMomenta)
+      {
+        hRecoTrkSegMomentumBack->Fill(momentum);
+      }
+
       numEventElectrons=0;
     }
   } //end the interface with the TTree at event level
@@ -279,10 +344,15 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   }
   cout << "Monte Carlo truth electron fills from selected events: all valid electrons = "
        << selectedAllElectronFills << ", rank-0 electrons = " << selectedRank0ElectronFills << endl;
+  cout << "Reconstructed trksegs momentum fills from selected events: front = "
+       << selectedRecoTrkSegFrontFills
+       << ", middle = " << selectedRecoTrkSegMiddleFills
+       << ", back = " << selectedRecoTrkSegBackFills << endl;
 
   const string histogramFileName = "twoElectronEvents_" + generatorName + "_histograms.root";
   TFile histogramFile(histogramFileName.c_str(), "RECREATE");
   auto* mcTruthDirectory = histogramFile.mkdir("Monte Carlo truth");
+  auto* recoTrkSegMomentumDirectory = histogramFile.mkdir("Reconstructed track-segment momentum");
   if (mcTruthDirectory != nullptr)
   {
     mcTruthDirectory->cd();
@@ -339,6 +409,14 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   hMCTRank0ElectronOriginXZ->Write();
   hMCTRank0ElectronOriginYZ->Write();
 
+  if (recoTrkSegMomentumDirectory != nullptr)
+  {
+    recoTrkSegMomentumDirectory->cd();
+  }
+  hRecoTrkSegMomentumFront->Write();
+  hRecoTrkSegMomentumMiddle->Write();
+  hRecoTrkSegMomentumBack->Write();
+
   const string plotsDirectory = "Plots";
   gSystem->mkdir(plotsDirectory.c_str(), true);
 
@@ -364,9 +442,47 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   momentumLegend->AddEntry(hMCTAllElectronMomentum, "All electrons", "l");
   momentumLegend->AddEntry(hMCTRank0ElectronMomentum, "Rank 0 electrons", "l");
   momentumLegend->Draw();
+  if (mcTruthDirectory != nullptr)
+  {
+    mcTruthDirectory->cd();
+  }
   cMCTMomentum->Write();
   const string momentumPdfName = plotsDirectory + "/twoElectronEvents_" + generatorName + "_MonteCarloTruthMomentum.pdf";
   cMCTMomentum->SaveAs(momentumPdfName.c_str());
+
+  TCanvas* cRecoTrkSegMomentum = new TCanvas(
+    "cRecoTrkSegMomentum",
+    "Reconstructed trksegs momentum at tracker surfaces",
+    900, 700);
+  hRecoTrkSegMomentumFront->SetLineColor(kBlue + 1);
+  hRecoTrkSegMomentumFront->SetLineWidth(2);
+  hRecoTrkSegMomentumMiddle->SetLineColor(kGreen + 2);
+  hRecoTrkSegMomentumMiddle->SetLineWidth(2);
+  hRecoTrkSegMomentumBack->SetLineColor(kOrange + 7);
+  hRecoTrkSegMomentumBack->SetLineWidth(2);
+  const double maxRecoTrkSegMomentumBinContent = max(
+    hRecoTrkSegMomentumFront->GetMaximum(),
+    max(hRecoTrkSegMomentumMiddle->GetMaximum(), hRecoTrkSegMomentumBack->GetMaximum()));
+  if (maxRecoTrkSegMomentumBinContent > 0.0)
+  {
+    hRecoTrkSegMomentumFront->SetMaximum(1.15 * maxRecoTrkSegMomentumBinContent);
+  }
+  hRecoTrkSegMomentumFront->Draw("HIST E");
+  hRecoTrkSegMomentumMiddle->Draw("HIST E SAME");
+  hRecoTrkSegMomentumBack->Draw("HIST E SAME");
+  TLegend* recoTrkSegMomentumLegend = new TLegend(0.60, 0.70, 0.88, 0.88);
+  recoTrkSegMomentumLegend->AddEntry(hRecoTrkSegMomentumFront, "TT_Front", "l");
+  recoTrkSegMomentumLegend->AddEntry(hRecoTrkSegMomentumMiddle, "TT_Mid", "l");
+  recoTrkSegMomentumLegend->AddEntry(hRecoTrkSegMomentumBack, "TT_Back", "l");
+  recoTrkSegMomentumLegend->Draw();
+  if (recoTrkSegMomentumDirectory != nullptr)
+  {
+    recoTrkSegMomentumDirectory->cd();
+  }
+  cRecoTrkSegMomentum->Write();
+  const string recoTrkSegMomentumPdfName =
+    plotsDirectory + "/twoElectronEvents_" + generatorName + "_RecoTrkSegMomentum.pdf";
+  cRecoTrkSegMomentum->SaveAs(recoTrkSegMomentumPdfName.c_str());
 
   TCanvas* cMCTOrigins = new TCanvas("cMCTOrigins", "Monte Carlo truth: trkmcsim origins", 1200, 800);
   cMCTOrigins->Divide(3, 2);
@@ -382,6 +498,10 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   hMCTRank0ElectronOriginY->Draw("HIST E");
   cMCTOrigins->cd(6);
   hMCTRank0ElectronOriginZ->Draw("HIST E");
+  if (mcTruthDirectory != nullptr)
+  {
+    mcTruthDirectory->cd();
+  }
   cMCTOrigins->Write();
   const string originsPdfName = plotsDirectory + "/twoElectronEvents_" + generatorName + "_MonteCarloTruthOrigins.pdf";
   cMCTOrigins->SaveAs(originsPdfName.c_str());
@@ -400,6 +520,10 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   hMCTRank0ElectronOriginXZ->Draw("COLZ");
   cMCTOriginMaps->cd(6);
   hMCTRank0ElectronOriginYZ->Draw("COLZ");
+  if (mcTruthDirectory != nullptr)
+  {
+    mcTruthDirectory->cd();
+  }
   cMCTOriginMaps->Write();
   const string originMapsPdfName = plotsDirectory + "/twoElectronEvents_" + generatorName + "_MonteCarloTruthOriginMaps.pdf";
   cMCTOriginMaps->SaveAs(originMapsPdfName.c_str());
@@ -408,6 +532,7 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   histogramFile.Close();
 
   delete cMCTMomentum;
+  delete cRecoTrkSegMomentum;
   delete cMCTOrigins;
   delete cMCTOriginMaps;
 
@@ -425,16 +550,21 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   delete hMCTRank0ElectronOriginXY;
   delete hMCTRank0ElectronOriginXZ;
   delete hMCTRank0ElectronOriginYZ;
+  delete hRecoTrkSegMomentumFront;
+  delete hRecoTrkSegMomentumMiddle;
+  delete hRecoTrkSegMomentumBack;
 
   TH1::AddDirectory(oldAddDirectoryStatus);
   gROOT->SetBatch(wasBatchMode);
 
-  cout << "Writing and saving Monte Carlo truth plots took "
+  cout << "Writing and saving plots took "
        << plotTimer.RealTime() << " seconds of wall time." << endl;
   cout << "Wrote Monte Carlo truth histograms to " << histogramFileName << endl;
   cout << "Wrote Monte Carlo truth PDF plots to " << momentumPdfName
        << ", " << originsPdfName
        << ", and " << originMapsPdfName << endl;
+  cout << "Wrote reconstructed trksegs momentum PDF plot to "
+       << recoTrkSegMomentumPdfName << endl;
 
 }//end twoElectronEventCutterHistogrammer method
 
