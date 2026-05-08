@@ -440,7 +440,8 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   }
   hMCTAllElectronMomentum->Draw("HIST");
   hMCTRank0ElectronMomentum->Draw("HIST E SAME");
-  TLegend* momentumLegend = new TLegend(0.60, 0.72, 0.88, 0.88);
+  TLegend* momentumLegend = new TLegend(0.40, 0.44, 0.60, 0.56);
+  momentumLegend->SetTextSize(0.028);
   momentumLegend->AddEntry(hMCTAllElectronMomentum, "All electrons", "l");
   momentumLegend->AddEntry(hMCTRank0ElectronMomentum, "Rank 0 electrons", "l");
   momentumLegend->Draw();
@@ -472,7 +473,8 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   hRecoTrkSegMomentumFront->Draw("HIST E");
   hRecoTrkSegMomentumMiddle->Draw("HIST E SAME");
   hRecoTrkSegMomentumBack->Draw("HIST E SAME");
-  TLegend* recoTrkSegMomentumLegend = new TLegend(0.60, 0.70, 0.88, 0.88);
+  TLegend* recoTrkSegMomentumLegend = new TLegend(0.40, 0.44, 0.60, 0.56);
+  recoTrkSegMomentumLegend->SetTextSize(0.028);
   recoTrkSegMomentumLegend->AddEntry(hRecoTrkSegMomentumFront, "TT_Front", "l");
   recoTrkSegMomentumLegend->AddEntry(hRecoTrkSegMomentumMiddle, "TT_Mid", "l");
   recoTrkSegMomentumLegend->AddEntry(hRecoTrkSegMomentumBack, "TT_Back", "l");
