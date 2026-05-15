@@ -11,8 +11,10 @@
 //   3. Write those selected event numbers and angular information to a text file.
 //   4. Make ROOT histograms and PDF plots for:
 //        - trkmcsim momentum and origin positions for the selected two-electron events.
+//        - rank-0-only trkmcsim origin-position plots for those selected events.
 //        - trkmcsim theta/phi angular distributions for those events.
 //        - reconstructed trksegs momentum at TT_Front, TT_Mid, and TT_Back.
+//        - a log-y reconstructed trksegs momentum companion plot for tail checks.
 //        - comparisons of all events vs selected two-electron events.
 //
 // Vocabulary used in this macro:
@@ -134,8 +136,11 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   const double thetaDegMax = 180.0;
   const double phiDegMin = -180.0;
   const double phiDegMax = 180.0;
+  const int thetaDegBins = 36;
+  const int phiDegBins = 36;
   const double cosThetaMin = -1.0;
   const double cosThetaMax = 1.0;
+  const double recoTrkSegMomentumLinearXMin = 20.0;
   const string surfaceSuffixes[3] = {"Front", "Middle", "Back"};
   const string surfaceLabels[3] = {"TT_Front", "TT_Mid", "TT_Back"};
 
@@ -241,15 +246,16 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   // Angular histograms for valid trkmcsim electrons in selected two-electron events.
   //
   // "All" keeps every valid electron MC match in a selected event.  "Rank 0"
-  // keeps only the two best MC matches that define the selected event.
+  // keeps only the two best MC matches that define the selected event.  The 1D
+  // theta/phi histograms use coarser bins to reduce low-statistics bin chatter.
   TH1F* hMCTAllElectronTheta = new TH1F(
     "hMCTAllElectronTheta",
     "Monte Carlo truth: all trkmcsim electron #theta;#theta [deg];Electrons",
-    180, thetaDegMin, thetaDegMax);
+    thetaDegBins, thetaDegMin, thetaDegMax);
   TH1F* hMCTAllElectronPhi = new TH1F(
     "hMCTAllElectronPhi",
     "Monte Carlo truth: all trkmcsim electron #phi;#phi [deg];Electrons",
-    180, phiDegMin, phiDegMax);
+    phiDegBins, phiDegMin, phiDegMax);
   TH2F* hMCTAllElectronCosThetaVsPhi = new TH2F(
     "hMCTAllElectronCosThetaVsPhi",
     "Monte Carlo truth: all trkmcsim electron cos(#theta) vs #phi;#phi [deg];cos(#theta);Electrons",
@@ -258,11 +264,11 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   TH1F* hMCTRank0ElectronTheta = new TH1F(
     "hMCTRank0ElectronTheta",
     "Monte Carlo truth: rank-0 trkmcsim electron #theta;#theta [deg];Electrons",
-    180, thetaDegMin, thetaDegMax);
+    thetaDegBins, thetaDegMin, thetaDegMax);
   TH1F* hMCTRank0ElectronPhi = new TH1F(
     "hMCTRank0ElectronPhi",
     "Monte Carlo truth: rank-0 trkmcsim electron #phi;#phi [deg];Electrons",
-    180, phiDegMin, phiDegMax);
+    phiDegBins, phiDegMin, phiDegMax);
   TH2F* hMCTRank0ElectronCosThetaVsPhi = new TH2F(
     "hMCTRank0ElectronCosThetaVsPhi",
     "Monte Carlo truth: rank-0 trkmcsim electron cos(#theta) vs #phi;#phi [deg];cos(#theta);Electrons",
@@ -1177,7 +1183,8 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   // PDF 4: selected-event reconstructed trksegs momentum overlay
   //
   // This is the front/middle/back reconstructed momentum comparison for the
-  // selected two-electron events only.
+  // selected two-electron events only.  The linear-scale view starts at
+  // 20 MeV/c to focus on the populated reconstructed-track region.
   //----------------------------------------------------------------------------
   TCanvas* cRecoTrkSegMomentum = new TCanvas(
     "cRecoTrkSegMomentum",
@@ -1201,6 +1208,7 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   {
     hRecoTrkSegMomentumFront->SetMaximum(1.15 * maxRecoTrkSegMomentumBinContent);
   }
+  hRecoTrkSegMomentumFront->GetXaxis()->SetRangeUser(recoTrkSegMomentumLinearXMin, momentumMax);
   hRecoTrkSegMomentumFront->Draw("HIST E");
   hRecoTrkSegMomentumMiddle->Draw("HIST E SAME");
   hRecoTrkSegMomentumBack->Draw("HIST E SAME");
@@ -1222,7 +1230,44 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   cRecoTrkSegMomentum->SaveAs(recoTrkSegMomentumPdfName.c_str());
 
   //----------------------------------------------------------------------------
-  // PDF 5: reconstructed trksegs event-selection comparison
+  // PDF 5: selected-event reconstructed trksegs momentum overlay with log y
+  //
+  // This companion plot keeps the full 0-65 MeV/c momentum range and uses a
+  // logarithmic y-axis so low-statistics tails are easier to see.
+  //----------------------------------------------------------------------------
+  TCanvas* cRecoTrkSegMomentumLogY = new TCanvas(
+    "cRecoTrkSegMomentumLogY",
+    "Reconstructed trksegs momentum at tracker surfaces, log y",
+    900, 700);
+  cRecoTrkSegMomentumLogY->SetLogy();
+
+  hRecoTrkSegMomentumFront->GetXaxis()->SetRangeUser(momentumMin, momentumMax);
+  if (maxRecoTrkSegMomentumBinContent > 0.0)
+  {
+    hRecoTrkSegMomentumFront->SetMinimum(0.5);
+    hRecoTrkSegMomentumFront->SetMaximum(10.0 * maxRecoTrkSegMomentumBinContent);
+  }
+  hRecoTrkSegMomentumFront->Draw("HIST E");
+  hRecoTrkSegMomentumMiddle->Draw("HIST E SAME");
+  hRecoTrkSegMomentumBack->Draw("HIST E SAME");
+
+  TLegend* recoTrkSegMomentumLogYLegend = new TLegend(0.40, 0.44, 0.60, 0.56);
+  recoTrkSegMomentumLogYLegend->SetTextSize(0.028);
+  recoTrkSegMomentumLogYLegend->AddEntry(hRecoTrkSegMomentumFront, "TT_Front", "l");
+  recoTrkSegMomentumLogYLegend->AddEntry(hRecoTrkSegMomentumMiddle, "TT_Mid", "l");
+  recoTrkSegMomentumLogYLegend->AddEntry(hRecoTrkSegMomentumBack, "TT_Back", "l");
+  recoTrkSegMomentumLogYLegend->Draw();
+  if (recoTrkSegMomentumDirectory != nullptr)
+  {
+    recoTrkSegMomentumDirectory->cd();
+  }
+  cRecoTrkSegMomentumLogY->Write();
+  const string recoTrkSegMomentumLogYPdfName =
+    plotsDirectory + "/twoElectronEvents_" + generatorName + "_RecoTrkSegMomentumLogY.pdf";
+  cRecoTrkSegMomentumLogY->SaveAs(recoTrkSegMomentumLogYPdfName.c_str());
+
+  //----------------------------------------------------------------------------
+  // PDF 6: reconstructed trksegs event-selection comparison
   //
   // This canvas has six pads:
   //   top row    = all electron-matched tracks at TT_Front, TT_Mid, TT_Back
@@ -1263,7 +1308,7 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   cRecoTrkSegMomentumSelectionComparison->SaveAs(recoTrkSegMomentumComparisonPdfName.c_str());
 
   //----------------------------------------------------------------------------
-  // PDF 6: selected-event trkmcsim origin 1D histograms
+  // PDF 7: selected-event trkmcsim origin 1D histograms
   //
   // Six pads:
   //   top row    = all valid electron origins x, y, z
@@ -1296,7 +1341,7 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   cMCTOrigins->SaveAs(originsPdfName.c_str());
 
   //----------------------------------------------------------------------------
-  // PDF 7: selected-event trkmcsim origin 2D maps
+  // PDF 8: selected-event trkmcsim origin 2D maps
   //
   // Six pads:
   //   top row    = all valid electron XY, XZ, YZ origin maps
@@ -1332,6 +1377,58 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   const string originMapsPdfName = plotsDirectory + "/twoElectronEvents_" + generatorName + "_MonteCarloTruthOriginMaps.pdf";
   cMCTOriginMaps->SaveAs(originMapsPdfName.c_str());
 
+  //----------------------------------------------------------------------------
+  // PDF 9: selected-event rank-0 trkmcsim origin 1D histograms
+  //
+  // This version omits the all-electron row and shows only the rank-0 electrons
+  // that define the selected two-electron events.
+  //----------------------------------------------------------------------------
+  TCanvas* cMCTRank0Origins = new TCanvas(
+    "cMCTRank0Origins",
+    "Monte Carlo truth: rank-0 trkmcsim origins",
+    1200, 450);
+  cMCTRank0Origins->Divide(3, 1);
+  cMCTRank0Origins->cd(1);
+  hMCTRank0ElectronOriginX->Draw("HIST E");
+  cMCTRank0Origins->cd(2);
+  hMCTRank0ElectronOriginY->Draw("HIST E");
+  cMCTRank0Origins->cd(3);
+  hMCTRank0ElectronOriginZ->Draw("HIST E");
+  if (mcTruthDirectory != nullptr)
+  {
+    mcTruthDirectory->cd();
+  }
+  cMCTRank0Origins->Write();
+  const string rank0OriginsPdfName =
+    plotsDirectory + "/twoElectronEvents_" + generatorName + "_MonteCarloTruthRank0Origins.pdf";
+  cMCTRank0Origins->SaveAs(rank0OriginsPdfName.c_str());
+
+  //----------------------------------------------------------------------------
+  // PDF 10: selected-event rank-0 trkmcsim origin 2D maps
+  //
+  // This version omits the all-electron row and shows only the rank-0 XY, XZ,
+  // and YZ origin maps.
+  //----------------------------------------------------------------------------
+  TCanvas* cMCTRank0OriginMaps = new TCanvas(
+    "cMCTRank0OriginMaps",
+    "Monte Carlo truth: rank-0 trkmcsim origin maps",
+    1800, 500);
+  cMCTRank0OriginMaps->Divide(3, 1);
+  cMCTRank0OriginMaps->cd(1);
+  drawColorMap(hMCTRank0ElectronOriginXY);
+  cMCTRank0OriginMaps->cd(2);
+  drawColorMap(hMCTRank0ElectronOriginXZ);
+  cMCTRank0OriginMaps->cd(3);
+  drawColorMap(hMCTRank0ElectronOriginYZ);
+  if (mcTruthDirectory != nullptr)
+  {
+    mcTruthDirectory->cd();
+  }
+  cMCTRank0OriginMaps->Write();
+  const string rank0OriginMapsPdfName =
+    plotsDirectory + "/twoElectronEvents_" + generatorName + "_MonteCarloTruthRank0OriginMaps.pdf";
+  cMCTRank0OriginMaps->SaveAs(rank0OriginMapsPdfName.c_str());
+
   // Stop the plot timer after the last PDF is saved.
   plotTimer.Stop();
 
@@ -1351,9 +1448,12 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   delete cMCTMomentumSelectionComparison;
   delete cMCTAngles;
   delete cRecoTrkSegMomentum;
+  delete cRecoTrkSegMomentumLogY;
   delete cRecoTrkSegMomentumSelectionComparison;
   delete cMCTOrigins;
   delete cMCTOriginMaps;
+  delete cMCTRank0Origins;
+  delete cMCTRank0OriginMaps;
 
   // Delete trkmcsim momentum and comparison histograms.
   delete hMCTAllElectronMomentum;
@@ -1411,9 +1511,12 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
   cout << "Wrote Monte Carlo truth PDF plots to " << momentumPdfName
        << ", " << anglesPdfName
        << ", " << originsPdfName
-       << ", and " << originMapsPdfName << endl;
-  cout << "Wrote reconstructed trksegs momentum PDF plot to "
-       << recoTrkSegMomentumPdfName << endl;
+       << ", " << originMapsPdfName
+       << ", " << rank0OriginsPdfName
+       << ", and " << rank0OriginMapsPdfName << endl;
+  cout << "Wrote reconstructed trksegs momentum PDF plots to "
+       << recoTrkSegMomentumPdfName
+       << " and " << recoTrkSegMomentumLogYPdfName << endl;
   cout << "Wrote event-selection comparison PDF plots to "
        << mcTruthMomentumComparisonPdfName
        << " and " << recoTrkSegMomentumComparisonPdfName << endl;
