@@ -428,6 +428,40 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
     return atan2(momentum.y(), momentum.x()) * 180.0 / pi;
   };
 
+  // Fold the absolute phi difference into [0, 180] degrees.  Back-to-back
+  // particles should have this value near 180 degrees.
+  auto getFoldedDeltaPhiDeg = [](const double phi1Deg, const double phi2Deg) {
+    double deltaPhiDeg = fabs(phi1Deg - phi2Deg);
+    while (deltaPhiDeg > 360.0)
+    {
+      deltaPhiDeg -= 360.0;
+    }
+    if (deltaPhiDeg > 180.0)
+    {
+      deltaPhiDeg = 360.0 - deltaPhiDeg;
+    }
+    return deltaPhiDeg;
+  };
+
+  // Full 3D opening angle between two momentum vectors.  This is the cleanest
+  // event-by-event check for a thrown back-to-back electron pair.
+  auto getOpeningAngleDeg = [pi](const auto& momentum1, const auto& momentum2) {
+    const double momentumMagnitude1 = momentum1.R();
+    const double momentumMagnitude2 = momentum2.R();
+    if (momentumMagnitude1 <= 0.0 || momentumMagnitude2 <= 0.0)
+    {
+      return -1.0;
+    }
+
+    const double dotProduct =
+      momentum1.x() * momentum2.x() +
+      momentum1.y() * momentum2.y() +
+      momentum1.z() * momentum2.z();
+    double cosOpeningAngle = dotProduct / (momentumMagnitude1 * momentumMagnitude2);
+    cosOpeningAngle = max(-1.0, min(1.0, cosOpeningAngle));
+    return acos(cosOpeningAngle) * 180.0 / pi;
+  };
+
   //----------------------------------------------------------------------------
   // Main event loop
   //
@@ -663,6 +697,43 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
            << " degrees, phi: " << eventRank0ElectronPhiDeg.at(0) << " degrees" << endl;
       cout << "  Electron 2 theta from z-axis: " << eventRank0ElectronThetaDeg.at(1)
            << " degrees, phi: " << eventRank0ElectronPhiDeg.at(1) << " degrees" << endl;
+      const auto* electron1 = eventRank0Electrons.at(0);
+      const auto* electron2 = eventRank0Electrons.at(1);
+      const double thetaSumDeg = eventRank0ElectronThetaDeg.at(0) + eventRank0ElectronThetaDeg.at(1);
+      const double foldedDeltaPhiDeg = getFoldedDeltaPhiDeg(eventRank0ElectronPhiDeg.at(0),
+                                                            eventRank0ElectronPhiDeg.at(1));
+      const double openingAngleDeg = getOpeningAngleDeg(electron1->mom, electron2->mom);
+      cout << "  Pair checks: theta1 + theta2 = " << thetaSumDeg
+           << " degrees, folded |delta phi| = " << foldedDeltaPhiDeg
+           << " degrees, opening angle = " << openingAngleDeg << " degrees" << endl;
+      cout << "  Electron 1 SimInfo: id = " << electron1->id
+           << ", index = " << electron1->index
+           << ", rank = " << electron1->rank
+           << ", gen = " << electron1->gen
+           << ", startCode = " << electron1->startCode
+           << ", prirel = (" << static_cast<int>(electron1->prirel.relationship())
+           << ", " << static_cast<int>(electron1->prirel.removal()) << ")"
+           << ", trkrel = (" << static_cast<int>(electron1->trkrel.relationship())
+           << ", " << static_cast<int>(electron1->trkrel.removal()) << ")"
+           << ", mom = (" << electron1->mom.x()
+           << ", " << electron1->mom.y()
+           << ", " << electron1->mom.z() << ") MeV/c" << endl;
+      cout << "  Electron 2 SimInfo: id = " << electron2->id
+           << ", index = " << electron2->index
+           << ", rank = " << electron2->rank
+           << ", gen = " << electron2->gen
+           << ", startCode = " << electron2->startCode
+           << ", prirel = (" << static_cast<int>(electron2->prirel.relationship())
+           << ", " << static_cast<int>(electron2->prirel.removal()) << ")"
+           << ", trkrel = (" << static_cast<int>(electron2->trkrel.relationship())
+           << ", " << static_cast<int>(electron2->trkrel.removal()) << ")"
+           << ", mom = (" << electron2->mom.x()
+           << ", " << electron2->mom.y()
+           << ", " << electron2->mom.z() << ") MeV/c" << endl;
+      if (electron1->id == electron2->id)
+      {
+        cout << "  WARNING: both reconstructed tracks rank-0 match to the same SimParticle id." << endl;
+      }
 
       // Write one selected event per line to the text file.
       // The two angle pairs are safe to access with .at(0) and .at(1) because
@@ -1522,4 +1593,3 @@ void twoElectronEventCutterHistogrammer(const string& generatorName, const strin
        << " and " << recoTrkSegMomentumComparisonPdfName << endl;
 
 }//end twoElectronEventCutterHistogrammer method
-
